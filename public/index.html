@@ -46,6 +46,8 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 .fs::-webkit-scrollbar{display:none}
 .fb{background:#fdf0f3;border:1.5px solid #f0d0d8;border-radius:20px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.77rem;font-weight:500;padding:5px 12px;transition:all .18s;white-space:nowrap;flex-shrink:0}
 .fb:hover,.fb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+#filter-select{background:#fdf0f3;border:1.5px solid #f0d0d8;border-radius:10px;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500;padding:7px 32px 7px 12px;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='12' fill='none' stroke='%238a6070' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:140px;transition:border-color .18s}
+#filter-select:focus{border-color:var(--accent)}
 
 /* ── GRID ── */
 #vg{flex:1}
@@ -67,6 +69,18 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 .ca{color:var(--muted);font-size:.77rem;display:flex;gap:4px;align-items:flex-start;line-height:1.4}
 .ca svg{flex-shrink:0;margin-top:1px}
 .added-by{color:#c8a0a8;font-size:.72rem;font-style:italic}
+
+/* ── QUALIDADES ── */
+.quals-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
+.qual-badge{background:linear-gradient(135deg,#e8f4f0,#d4ede6);border:1px solid #b8ddd4;border-radius:20px;color:#2a7a60;font-size:.66rem;font-weight:600;letter-spacing:.02em;padding:3px 9px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.qual-badge::before{content:'✦';font-size:.55rem;opacity:.7}
+.pquals{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
+.pqual{background:#e8f4f0;border:1px solid #b8ddd4;border-radius:20px;color:#2a7a60;font-size:.67rem;font-weight:600;padding:2px 8px}
+.qual-checks{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding:2px}
+.qual-check{display:flex;align-items:center;gap:9px;cursor:pointer;padding:7px 11px;border:1.5px solid #eee;border-radius:10px;transition:all .18s;background:#fafafa;font-size:.85rem;color:var(--text)}
+.qual-check:hover{border-color:#b8ddd4;background:#f0faf7}
+.qual-check input[type=checkbox]{accent-color:#2a7a60;width:15px;height:15px;flex-shrink:0}
+.qual-check.checked{border-color:#b8ddd4;background:#e8f4f0;color:#2a7a60}
 
 /* ── SELO DA MÃE DE SANTO ── */
 .card.tem-selo{box-shadow:0 2px 16px rgba(180,60,90,.08),0 0 0 2px #e8c86080}
@@ -228,7 +242,7 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
       </button>
     </div>
     <div class="div"></div>
-    <div class="fs" id="filter-btns"></div>
+    <select id="filter-select" onchange="setCategoria(this.value)"></select>
   </div>
 </div>
 
@@ -254,7 +268,11 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 <div id="admin-bar">
   <button class="hbtn" onclick="abrirCats()">
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-    Gerenciar categorias
+    Categorias
+  </button>
+  <button class="hbtn" onclick="abrirQuals()" style="background:rgba(42,122,96,.35);border-color:rgba(42,122,96,.5)">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    Qualidades
   </button>
   <button class="hbtn" onclick="sairAdmin()" style="background:rgba(0,0,0,.15)">Sair do admin</button>
 </div>
@@ -300,6 +318,10 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
       <div class="f">
         <label>O que vende</label>
         <textarea id="s-sells" placeholder="Descreva brevemente os produtos…" style="min-height:60px"></textarea>
+      </div>
+      <div class="f">
+        <label>Qualidades (opcional)</label>
+        <div class="qual-checks" id="s-quals"></div>
       </div>
       <div class="f">
         <label>Quem está indicando *</label>
@@ -370,6 +392,10 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
       <div class="f"><label>Foto (URL)</label><input type="url" id="e-photo" /></div>
       <div class="f"><label>Adicionado por</label><input type="text" id="e-addedBy" /></div>
       <div class="f">
+        <label>Qualidades</label>
+        <div class="qual-checks" id="e-quals"></div>
+      </div>
+      <div class="f">
         <label>Selo da Mãe de Santo</label>
         <div class="selo-opts" id="selo-opts">
           <label class="selo-opt"><input type="radio" name="e-selo" value="" checked /><span>Sem selo</span></label>
@@ -405,15 +431,39 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
   </div>
 </div>
 
+<!-- ════ MODAL: QUALIDADES (admin) ════ -->
+<div class="ov" id="ov-quals">
+  <div class="mo" style="max-width:400px">
+    <div class="mh">
+      <h2>Gerenciar Qualidades</h2>
+      <button class="mc" onclick="fechar('ov-quals')">×</button>
+    </div>
+    <div class="mb2">
+      <p style="color:var(--muted);font-size:.83rem;line-height:1.5">Estas são as qualidades disponíveis como selos nos cards. Qualquer pessoa pode marcar ao indicar uma loja.</p>
+      <div id="quals-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="new-qual" placeholder="Nova qualidade…" style="background:#fafafa;border:1.5px solid #eee;border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.87rem;padding:9px 12px;outline:none;flex:1;transition:border-color .18s" />
+        <button class="bp" style="flex:0 0 auto;padding:9px 16px;background:#2a7a60" onclick="adicionarQual()">Adicionar</button>
+      </div>
+      <div class="ma">
+        <button class="bs" onclick="fechar('ov-quals')">Cancelar</button>
+        <button class="bp" style="background:#2a7a60" onclick="salvarQuals()">Salvar qualidades</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = '/api';
 let adminToken = null;
 let lojas = [];
 let cats = [];
+let quals = [];
 let currentView = 'grid';
 let activeCategory = 'Todas';
 let map = null, markers = [];
 let editCats = [];
+let editQuals = [];
 
 const SELOS = {
   'indicacao': '✨ Indicação da Mãe de Santo',
@@ -446,8 +496,8 @@ async function apiFetch(path, opts={}) {
 
 async function carregarTudo() {
   try {
-    [lojas, cats] = await Promise.all([apiFetch('/lojas'), apiFetch('/categorias')]);
-  } catch { lojas = []; cats = []; }
+    [lojas, cats, quals] = await Promise.all([apiFetch('/lojas'), apiFetch('/categorias'), apiFetch('/qualidades')]);
+  } catch { lojas = []; cats = []; quals = []; }
   buildFilters(); render();
   if (currentView === 'map') renderMapMarkers();
 }
@@ -497,16 +547,35 @@ function abrir(id) { document.getElementById(id).classList.add('open'); }
 function fechar(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target===o) fechar(o.id); }));
 
+// ══ QUALIDADES HELPERS ══
+function renderQualChecks(containerId, selected=[]) {
+  const el = document.getElementById(containerId); el.innerHTML='';
+  quals.forEach(q => {
+    const label = document.createElement('label');
+    label.className = 'qual-check' + (selected.includes(q) ? ' checked' : '');
+    label.innerHTML = `<input type="checkbox" value="${q}" ${selected.includes(q)?'checked':''}>${q}`;
+    label.querySelector('input').addEventListener('change', function() {
+      label.classList.toggle('checked', this.checked);
+    });
+    el.appendChild(label);
+  });
+}
+
+function getCheckedQuals(containerId) {
+  return [...document.querySelectorAll(`#${containerId} input:checked`)].map(i=>i.value);
+}
+
 // ══ SUBMISSÃO PÚBLICA ══
 function abrirSubmissao() {
   preencherSelectCats('s-category');
   ['name','addedBy','sells','address','maps','emoji','phone'].forEach(f => document.getElementById('s-'+f).value='');
+  renderQualChecks('s-quals');
   abrir('ov-sub');
 }
 
 async function submeterLoja() {
   const g = id => document.getElementById('s-'+id).value.trim();
-  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', phone:g('phone') };
+  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', phone:g('phone'), quals:getCheckedQuals('s-quals') };
   if (!body.name||!body.category||!body.address||!body.addedBy) { alert('Preencha nome, categoria, endereço e quem está indicando.'); return; }
   const btn = document.getElementById('btn-sub');
   btn.textContent = 'Enviando…'; btn.disabled = true;
@@ -535,6 +604,7 @@ function abrirEditar(id) {
   document.getElementById('e-lng').value = l.lng||'';
   document.getElementById('e-addedBy').value = l.addedBy||'';
   document.getElementById('e-phone').value = l.phone||'';
+  renderQualChecks('e-quals', l.quals||[]);
   // selo
   document.querySelectorAll('[name="e-selo"]').forEach(r => {
     r.checked = r.value === (l.selo||'');
@@ -553,7 +623,8 @@ async function salvarEdicao() {
     lat:parseFloat(document.getElementById('e-lat').value)||null,
     lng:parseFloat(document.getElementById('e-lng').value)||null,
     selo: document.querySelector('[name="e-selo"]:checked')?.value || '',
-    phone: g('phone') };
+    phone: g('phone'),
+    quals: getCheckedQuals('e-quals') };
   try {
     const updated = await apiFetch(`/loja/${id}`, { method:'PUT', body:JSON.stringify(body) });
     const i = lojas.findIndex(x=>x.id===id); lojas[i]=updated;
@@ -607,6 +678,41 @@ async function salvarCats() {
     cats = await apiFetch('/categorias', { method:'PUT', body:JSON.stringify(editCats) });
     fechar('ov-cats'); buildFilters(); toast('✅ Categorias salvas!');
   } catch { toast('❌ Erro ao salvar categorias.'); }
+}
+
+// ══ QUALIDADES (admin) ══
+function abrirQuals() {
+  editQuals = [...quals];
+  renderQualsList();
+  abrir('ov-quals');
+}
+
+function renderQualsList() {
+  const el = document.getElementById('quals-list'); el.innerHTML='';
+  editQuals.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className='cat-item';
+    div.innerHTML = `<input type="text" value="${q}" oninput="editQuals[${i}]=this.value" style="flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);padding:0" /><button class="cat-del" onclick="removeQual(${i})" title="Remover">×</button>`;
+    el.appendChild(div);
+  });
+}
+
+function removeQual(i) { editQuals.splice(i,1); renderQualsList(); }
+
+function adicionarQual() {
+  const v = document.getElementById('new-qual').value.trim();
+  if (!v || editQuals.includes(v)) return;
+  editQuals.push(v); document.getElementById('new-qual').value='';
+  renderQualsList();
+}
+
+document.getElementById('new-qual').addEventListener('keydown', e => { if(e.key==='Enter') adicionarQual(); });
+
+async function salvarQuals() {
+  try {
+    quals = await apiFetch('/qualidades', { method:'PUT', body:JSON.stringify(editQuals) });
+    fechar('ov-quals'); toast('✅ Qualidades salvas!');
+  } catch { toast('❌ Erro ao salvar qualidades.'); }
 }
 
 function preencherSelectCats(selectId, selected='') {
@@ -773,6 +879,7 @@ function popupHtml(l) {
     ${l.sells ? `<div class="ps">${l.sells}</div>` : ''}
     <div class="pad"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.address}</div>
     ${l.addedBy?`<div class="pab">Indicado por ${l.addedBy} ${l.addedAt?'· '+l.addedAt:''}</div>`:''}
+    ${l.quals&&l.quals.length?`<div class="pquals">${l.quals.map(q=>`<span class="pqual">${q}</span>`).join('')}</div>`:''}
     ${l.selo && SELOS[l.selo] ? `<div class="pselo">${SELOS[l.selo]}</div>` : ''}
     ${l.maps ? `<a class="pm" href="${l.maps}" target="_blank" rel="noopener"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Abrir no Google Maps</a>` : ''}
     ${waNum ? `<a class="pm" href="https://wa.me/55${waNum}" target="_blank" rel="noopener" style="background:#25a244;margin-top:5px">WhatsApp</a>` : ''}
@@ -801,15 +908,23 @@ function renderMapMarkers() {
 
 // ══ GRID ══
 function buildFilters() {
-  const wrap=document.getElementById('filter-btns'); wrap.innerHTML='';
-  const cs=['Todas',...new Set(lojas.map(l=>l.category))];
-  cs.forEach(cat=>{
-    const btn=document.createElement('button');
-    btn.className='fb'+(cat===activeCategory?' active':'');
-    btn.textContent=cat;
-    btn.addEventListener('click',()=>{ activeCategory=cat; document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); if(currentView==='map') renderMapMarkers(); });
-    wrap.appendChild(btn);
+  const sel = document.getElementById('filter-select');
+  const prev = sel.value || 'Todas';
+  sel.innerHTML = '';
+  const cats = ['Todas', ...new Set(lojas.map(l => l.category))];
+  cats.forEach(cat => {
+    const o = document.createElement('option');
+    o.value = cat; o.textContent = cat;
+    if (cat === prev) o.selected = true;
+    sel.appendChild(o);
   });
+  activeCategory = sel.value;
+}
+
+function setCategoria(val) {
+  activeCategory = val;
+  render();
+  if (currentView === 'map') renderMapMarkers();
 }
 
 const pin=(c='currentColor')=>`<svg width="12" height="12" fill="none" stroke="${c}" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
@@ -835,6 +950,7 @@ function render() {
         <p class="cs">${l.sells||''}</p>
         <p class="ca">${pin()} ${l.address}</p>
         ${l.addedBy?`<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>`:''}
+        ${l.quals&&l.quals.length?`<div class="quals-wrap">${l.quals.map(q=>`<span class="qual-badge">${q}</span>`).join('')}</div>`:''}
         <div class="cf">
           <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
           ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.143a.5.5 0 0 0 .6.6l5.291-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.65-.52-5.153-1.424l-.37-.22-3.136.874.875-3.136-.22-.37A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>${l.phone}</a>` : ''}
