@@ -103,6 +103,8 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 .cf{display:flex;gap:7px;margin-top:auto;padding-top:3px}
 .mb{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--light);border:none;border-radius:10px;color:var(--accent);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.79rem;font-weight:500;padding:9px;text-decoration:none;transition:all .18s}
 .mb:hover{background:var(--accent);color:#fff}
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:6px;background:#e8f8ee;border:none;border-radius:10px;color:#25a244;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.79rem;font-weight:500;padding:9px 11px;text-decoration:none;transition:all .18s;white-space:nowrap}
+.wa-btn:hover{background:#25a244;color:#fff}
 .eb{background:#f5f5f5;border:none;border-radius:10px;color:#bbb;cursor:pointer;padding:9px 11px;transition:all .18s;display:none;align-items:center}
 .eb:hover{background:#ffe4ea;color:var(--accent)}
 .admin-mode .eb{display:flex}
@@ -286,6 +288,11 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         <input type="text" id="s-address" placeholder="Rua X, 123 — Bairro" />
       </div>
       <div class="f">
+        <label>WhatsApp / Telefone</label>
+        <input type="tel" id="s-phone" placeholder="(51) 99999-9999" />
+        <span class="fh">Vai virar botão de WhatsApp no card</span>
+      </div>
+      <div class="f">
         <label>Link do Google Maps</label>
         <input type="url" id="s-maps" placeholder="https://share.google/… ou maps.google.com/…" />
         <span class="fh">Cole qualquer link do Google Maps — será usado no botão "Ver no mapa"</span>
@@ -349,6 +356,7 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         <span class="fh">Cole o link — endereço e coordenadas extraídos automaticamente</span>
       </div>
       <div class="f"><label>Endereço</label><input type="text" id="e-address" /></div>
+      <div class="f"><label>WhatsApp / Telefone</label><input type="tel" id="e-phone" placeholder="(51) 99999-9999" /></div>
       <div class="f">
         <label>Coordenadas (para o mapa)</label>
         <button class="bs" onclick="geocodificar('e')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas pelo endereço</button>
@@ -492,13 +500,13 @@ document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => {
 // ══ SUBMISSÃO PÚBLICA ══
 function abrirSubmissao() {
   preencherSelectCats('s-category');
-  ['name','addedBy','sells','address','maps','emoji'].forEach(f => document.getElementById('s-'+f).value='');
+  ['name','addedBy','sells','address','maps','emoji','phone'].forEach(f => document.getElementById('s-'+f).value='');
   abrir('ov-sub');
 }
 
 async function submeterLoja() {
   const g = id => document.getElementById('s-'+id).value.trim();
-  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo' };
+  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', phone:g('phone') };
   if (!body.name||!body.category||!body.address||!body.addedBy) { alert('Preencha nome, categoria, endereço e quem está indicando.'); return; }
   const btn = document.getElementById('btn-sub');
   btn.textContent = 'Enviando…'; btn.disabled = true;
@@ -526,6 +534,7 @@ function abrirEditar(id) {
   document.getElementById('e-lat').value = l.lat||'';
   document.getElementById('e-lng').value = l.lng||'';
   document.getElementById('e-addedBy').value = l.addedBy||'';
+  document.getElementById('e-phone').value = l.phone||'';
   // selo
   document.querySelectorAll('[name="e-selo"]').forEach(r => {
     r.checked = r.value === (l.selo||'');
@@ -543,7 +552,8 @@ async function salvarEdicao() {
   const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), photo:g('photo'), emoji:g('emoji')||'🏪', addedBy:g('addedBy'),
     lat:parseFloat(document.getElementById('e-lat').value)||null,
     lng:parseFloat(document.getElementById('e-lng').value)||null,
-    selo: document.querySelector('[name="e-selo"]:checked')?.value || '' };
+    selo: document.querySelector('[name="e-selo"]:checked')?.value || '',
+    phone: g('phone') };
   try {
     const updated = await apiFetch(`/loja/${id}`, { method:'PUT', body:JSON.stringify(body) });
     const i = lojas.findIndex(x=>x.id===id); lojas[i]=updated;
@@ -720,26 +730,70 @@ function initMap() {
   renderMapMarkers();
 }
 
+// marker lookup by store id
+const markerById = {};
+
+async function abrirNoMapa(id) {
+  const l = lojas.find(x => x.id === id);
+  if (!l) return;
+
+  // Switch to map tab
+  setView('map');
+
+  // If already has coords → fly there
+  if (l.lat && l.lng) {
+    map.flyTo([l.lat, l.lng], 16, { duration: 1 });
+    setTimeout(() => { if (markerById[id]) markerById[id].openPopup(); }, 1100);
+    return;
+  }
+
+  // No coords → try to geocode address on the fly
+  if (!l.address) { toast('Esta loja não tem endereço cadastrado.'); return; }
+  toast('📍 Localizando no mapa…');
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(l.address)}`, { headers:{'Accept-Language':'pt-BR'} });
+    const data = await res.json();
+    if (!data.length) { toast('❌ Endereço não encontrado. Admin pode adicionar as coordenadas.'); return; }
+    l.lat = parseFloat(data[0].lat);
+    l.lng = parseFloat(data[0].lon);
+    // Add marker for this store
+    const m = L.marker([l.lat, l.lng], { icon: criarIcone(l.emoji) }).addTo(map);
+    m.bindPopup(popupHtml(l), { maxWidth: 260 });
+    markerById[id] = m;
+    map.flyTo([l.lat, l.lng], 16, { duration: 1 });
+    setTimeout(() => m.openPopup(), 1100);
+  } catch { toast('❌ Não foi possível localizar o endereço.'); }
+}
+
+function popupHtml(l) {
+  const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
+  return `<div class="pi">
+    <span class="ptag">${l.category}</span>
+    <div class="pn">${l.name}</div>
+    ${l.sells ? `<div class="ps">${l.sells}</div>` : ''}
+    <div class="pad"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.address}</div>
+    ${l.addedBy?`<div class="pab">Indicado por ${l.addedBy} ${l.addedAt?'· '+l.addedAt:''}</div>`:''}
+    ${l.selo && SELOS[l.selo] ? `<div class="pselo">${SELOS[l.selo]}</div>` : ''}
+    ${l.maps ? `<a class="pm" href="${l.maps}" target="_blank" rel="noopener"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Abrir no Google Maps</a>` : ''}
+    ${waNum ? `<a class="pm" href="https://wa.me/55${waNum}" target="_blank" rel="noopener" style="background:#25a244;margin-top:5px">WhatsApp</a>` : ''}
+  </div>`;
+}
+
 function renderMapMarkers() {
   if (!map) return;
   markers.forEach(m=>m.remove()); markers=[];
+  Object.keys(markerById).forEach(k => delete markerById[k]);
+
   const lista = filtrados().filter(l=>l.lat&&l.lng);
   const sem = filtrados().filter(l=>!l.lat||!l.lng);
   document.getElementById('map-warn').style.display = sem.length?'block':'none';
   if (!lista.length) return;
   const bounds=[];
   lista.forEach(l=>{
-    const m = L.marker([l.lat,l.lng],{icon:criarIcone(l.emoji)}).addTo(map).bindPopup(`
-      <div class="pi">
-        <span class="ptag">${l.category}</span>
-        <div class="pn">${l.name}</div>
-        <div class="ps">${l.sells}</div>
-        <div class="pad"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.address}</div>
-        ${l.addedBy?`<div class="pab">Indicado por ${l.addedBy} ${l.addedAt?'· '+l.addedAt:''}</div>`:''}
-        ${l.selo && SELOS[l.selo] ? `<div class="pselo">${SELOS[l.selo]}</div>` : ''}
-        <a class="pm" href="${l.maps}" target="_blank" rel="noopener"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Abrir no Google Maps</a>
-      </div>`, {maxWidth:260});
-    markers.push(m); bounds.push([l.lat,l.lng]);
+    const m = L.marker([l.lat,l.lng],{icon:criarIcone(l.emoji)}).addTo(map).bindPopup(popupHtml(l), {maxWidth:260});
+    markers.push(m);
+    markerById[l.id] = m;
+    bounds.push([l.lat,l.lng]);
   });
   if (bounds.length===1) map.setView(bounds[0],15);
   else map.fitBounds(bounds,{padding:[40,40]});
@@ -769,15 +823,21 @@ function render() {
     const card=document.createElement('div');
     card.className='card'+(l.selo?` tem-selo`:''); card.style.animationDelay=(i*.05)+'s';
     const seloFaixa = l.selo && SELOS[l.selo] ? `<div class="selo-faixa">${SELOS[l.selo]}</div>` : '';
-    const ph=l.photo?`<div class="photo-wrap"><img class="cp" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'cpp\\'>${l.emoji||'🏪'}</div>'">${seloFaixa}</div>` :`<div class="photo-wrap"><div class="cpp">${l.emoji||'🏪'}</div>${seloFaixa}</div>`;
+    const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
+    const waLink = waNum ? `https://wa.me/55${waNum}` : '';
+    const waBtn = waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.143a.5.5 0 0 0 .6.6l5.291-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.65-.52-5.153-1.424l-.37-.22-3.136.874.875-3.136-.22-.37A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>WhatsApp</a>` : '';
+    const ph = l.photo
+      ? `<div class="photo-wrap"><img class="cp" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'cpp\\'>${l.emoji||'🏪'}</div>'">${seloFaixa}</div>`
+      : `<div class="photo-wrap"><div class="cpp">${l.emoji||'🏪'}</div>${seloFaixa}</div>`;
     card.innerHTML=`${ph}
       <div class="cb2">
         <div class="ct"><h2 class="cn">${l.name}</h2><span class="tag">${l.category}</span></div>
-        <p class="cs">${l.sells}</p>
+        <p class="cs">${l.sells||''}</p>
         <p class="ca">${pin()} ${l.address}</p>
         ${l.addedBy?`<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>`:''}
         <div class="cf">
-          <a class="mb" href="${l.maps}" target="_blank" rel="noopener">${pin('#fff')} Ver no mapa</a>
+          <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
+          ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.143a.5.5 0 0 0 .6.6l5.291-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.65-.52-5.153-1.424l-.37-.22-3.136.874.875-3.136-.22-.37A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>${l.phone}</a>` : ''}
           <button class="eb" onclick="abrirEditar(${l.id})" title="Editar">
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
