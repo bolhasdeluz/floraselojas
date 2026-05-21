@@ -55,6 +55,13 @@ export async function onRequest({ request, env, params }) {
   // ── GET /api/lojas ──────────────────────
   if (path === '/lojas' && request.method === 'GET') {
     const lojas = await getLojas(env);
+    const admin = isAdmin(request, env);
+    // hide stores from private categories for non-admins
+    if (!admin) {
+      const cats = await getCats(env);
+      const privateCats = new Set(cats.filter(c => c.private).map(c => c.name));
+      return json(privateCats.size ? lojas.filter(l => !privateCats.has(l.category)) : lojas);
+    }
     return json(lojas);
   }
 
