@@ -290,23 +290,24 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         <textarea id="s-sells" placeholder="Descreva brevemente os produtos…"></textarea>
       </div>
       <div class="f">
-        <label>Endereço completo *</label>
-        <input type="text" id="s-address" placeholder="Rua X, 123 — Bairro, Cidade" />
-        <span class="fh">Coloque a cidade no final para o mapa funcionar</span>
+        <label>Link do Google Maps *</label>
+        <input type="url" id="s-maps" placeholder="https://maps.google.com/?q=…"
+          oninput="extrairDoMaps(this.value,'s')" />
+        <span class="fh">Cole o link — endereço e coordenadas serão preenchidos automaticamente</span>
       </div>
       <div class="f">
-        <label>Localizar no mapa</label>
-        <button class="bs" onclick="geocodificar('s')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas automaticamente</button>
+        <label>Endereço completo *</label>
+        <input type="text" id="s-address" placeholder="Rua X, 123 — Bairro, Cidade" />
+        <span class="fh">Confirme ou ajuste o endereço extraído do link</span>
+      </div>
+      <div class="f">
+        <label>Coordenadas (para o mapa)</label>
+        <button class="bs" onclick="geocodificar('s')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas pelo endereço</button>
         <span class="gs" id="gs-s"></span>
       </div>
       <div class="r2">
         <div class="f"><label>Latitude</label><input type="number" id="s-lat" placeholder="-30.0346" step="any" /></div>
         <div class="f"><label>Longitude</label><input type="number" id="s-lng" placeholder="-51.2177" step="any" /></div>
-      </div>
-      <div class="f">
-        <label>Link do Google Maps *</label>
-        <input type="url" id="s-maps" placeholder="https://maps.google.com/?q=…" />
-        <span class="fh">No Google Maps → Compartilhar → copie o link</span>
       </div>
       <div class="f">
         <label>Foto (URL da imagem)</label>
@@ -357,10 +358,15 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         <div class="f"><label>Emoji</label><input type="text" id="e-emoji" maxlength="4" /></div>
       </div>
       <div class="f"><label>O que vende *</label><textarea id="e-sells"></textarea></div>
+      <div class="f">
+        <label>Link do Google Maps *</label>
+        <input type="url" id="e-maps" oninput="extrairDoMaps(this.value,'e')" />
+        <span class="fh">Cole o link — endereço e coordenadas extraídos automaticamente</span>
+      </div>
       <div class="f"><label>Endereço *</label><input type="text" id="e-address" /></div>
       <div class="f">
-        <label>Localizar no mapa</label>
-        <button class="bs" onclick="geocodificar('e')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas</button>
+        <label>Coordenadas (para o mapa)</label>
+        <button class="bs" onclick="geocodificar('e')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas pelo endereço</button>
         <span class="gs" id="gs-e"></span>
       </div>
       <div class="r2">
@@ -587,7 +593,7 @@ function renderCatsList() {
   editCats.forEach((c, i) => {
     const div = document.createElement('div');
     div.className='cat-item';
-    div.innerHTML = `<span>${c}</span><button class="cat-del" onclick="removeCat(${i})" title="Remover">×</button>`;
+    div.innerHTML = `<input type="text" value="${c}" oninput="editCats[${i}]=this.value" style="flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);padding:0" /><button class="cat-del" onclick="removeCat(${i})" title="Remover">×</button>`;
     el.appendChild(div);
   });
 }
@@ -613,6 +619,41 @@ async function salvarCats() {
 function preencherSelectCats(selectId, selected='') {
   const sel = document.getElementById(selectId); sel.innerHTML='';
   cats.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===selected) o.selected=true; sel.appendChild(o); });
+}
+
+// ══ EXTRAI DADOS DO LINK DO GOOGLE MAPS ══
+function extrairDoMaps(url, pfx) {
+  if (!url) return;
+  try {
+    const u = new URL(url);
+
+    // 1. Coordenadas de @lat,lng no path
+    const coordMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coordMatch) {
+      document.getElementById(pfx+'-lat').value = parseFloat(coordMatch[1]).toFixed(6);
+      document.getElementById(pfx+'-lng').value = parseFloat(coordMatch[2]).toFixed(6);
+    }
+
+    // 2. Endereço — tenta várias fontes em ordem de prioridade
+
+    // 2a. ?q= param (maps.google.com/?q=endereço)
+    const q = u.searchParams.get('q');
+    if (q && !/^-?\d+\.\d+,-?\d+\.\d+$/.test(q.trim())) {
+      // q não é só coordenadas brutas — é um endereço
+      const addrEl = document.getElementById(pfx+'-address');
+      if (!addrEl.value.trim()) addrEl.value = decodeURIComponent(q.replace(/\+/g,' '));
+      return;
+    }
+
+    // 2b. /place/NOME/ no path
+    const placeMatch = url.match(/\/place\/([^/@]+)/);
+    if (placeMatch) {
+      const addrEl = document.getElementById(pfx+'-address');
+      if (!addrEl.value.trim()) {
+        addrEl.value = decodeURIComponent(placeMatch[1].replace(/\+/g,' '));
+      }
+    }
+  } catch {}
 }
 
 // ══ GEOCODE ══
