@@ -55,12 +55,12 @@ export async function onRequest({ request, env, params }) {
   // ── GET /api/lojas ──────────────────────
   if (path === '/lojas' && request.method === 'GET') {
     const lojas = await getLojas(env);
-    if (!isAdmin(request, env)) {
-      try {
-        const cats = await getCats(env);
-        const privateCats = new Set(cats.filter(c => c.private).map(c => c.name));
-        if (privateCats.size) return json(lojas.filter(l => !privateCats.has(l.category)));
-      } catch {}
+    const admin = isAdmin(request, env);
+    // hide stores from private categories for non-admins
+    if (!admin) {
+      const cats = await getCats(env);
+      const privateCats = new Set(cats.filter(c => c.private).map(c => c.name));
+      return json(privateCats.size ? lojas.filter(l => !privateCats.has(l.category)) : lojas);
     }
     return json(lojas);
   }
@@ -115,20 +115,6 @@ export async function onRequest({ request, env, params }) {
     return json({ ok: true });
   }
 
-  // ── POST /api/reset-cats (admin) — recupera categorias corrompidas ──
-  if (path === '/reset-cats' && request.method === 'POST') {
-    if (!isAdmin(request, env)) return json({ error: 'Não autorizado' }, 401);
-    const defaults = [
-      {name:'Alimentos',       emoji:'🥬', private:false},
-      {name:'Artesanato',      emoji:'🏺', private:false},
-      {name:'Ervas & Naturais',emoji:'🌿', private:false},
-      {name:'Esotérico',       emoji:'🕯️', private:false},
-      {name:'Livros & Cultura',emoji:'📚', private:false},
-    ];
-    await env.LOJAS_KV.put('categorias', JSON.stringify(defaults));
-    return json(defaults);
-  }
-
   // ── GET /api/resolve-url?u=... ────────
   // Resolve short Google Maps URLs (share.google, goo.gl, maps.app.goo.gl)
   // server-side to extract the final URL with coords and address
@@ -174,9 +160,8 @@ export async function onRequest({ request, env, params }) {
     const body = await request.json();
     if (!Array.isArray(body)) return json({ error: 'Array esperado' }, 400);
     const cats = body.map(c => ({
-      name:    String(c.name||c).slice(0, 60),
-      emoji:   String(c.emoji||'🏪').slice(0, 4),
-      private: Boolean(c.private || false)
+      name: String(c.name||c).slice(0, 60),
+      emoji: String(c.emoji||'🏪').slice(0, 4)
     })).filter(c => c.name);
     await env.LOJAS_KV.put('categorias', JSON.stringify(cats));
     return json(cats);
