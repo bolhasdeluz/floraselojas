@@ -268,10 +268,6 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
     </div>
     <div class="mb2">
       <div class="f">
-        <label>Seu nome (quem está indicando)</label>
-        <input type="text" id="s-addedBy" placeholder="Ex: Maria, Fernanda…" />
-      </div>
-      <div class="f">
         <label>Nome da loja *</label>
         <input type="text" id="s-name" placeholder="Ex: Empório das Ervas" />
       </div>
@@ -286,32 +282,21 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         </div>
       </div>
       <div class="f">
-        <label>O que vende</label>
-        <textarea id="s-sells" placeholder="Descreva brevemente os produtos…"></textarea>
+        <label>Endereço *</label>
+        <input type="text" id="s-address" placeholder="Rua X, 123 — Bairro" />
       </div>
       <div class="f">
         <label>Link do Google Maps</label>
-        <input type="url" id="s-maps" placeholder="https://maps.google.com/?q=…"
-          oninput="extrairDoMaps(this.value,'s')" />
-        <span class="fh">Cole o link — endereço e coordenadas serão preenchidos automaticamente</span>
+        <input type="url" id="s-maps" placeholder="https://share.google/… ou maps.google.com/…" />
+        <span class="fh">Cole qualquer link do Google Maps — será usado no botão "Ver no mapa"</span>
       </div>
       <div class="f">
-        <label>Endereço completo *</label>
-        <input type="text" id="s-address" placeholder="Rua X, 123 — Bairro, Cidade" />
-        <span class="fh">Confirme ou ajuste o endereço extraído do link</span>
+        <label>O que vende</label>
+        <textarea id="s-sells" placeholder="Descreva brevemente os produtos…" style="min-height:60px"></textarea>
       </div>
       <div class="f">
-        <label>Coordenadas (para o mapa)</label>
-        <button class="bs" onclick="geocodificar('s')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas pelo endereço</button>
-        <span class="gs" id="gs-s"></span>
-      </div>
-      <div class="r2">
-        <div class="f"><label>Latitude</label><input type="number" id="s-lat" placeholder="-30.0346" step="any" /></div>
-        <div class="f"><label>Longitude</label><input type="number" id="s-lng" placeholder="-51.2177" step="any" /></div>
-      </div>
-      <div class="f">
-        <label>Foto (URL da imagem)</label>
-        <input type="url" id="s-photo" placeholder="https://… (opcional)" />
+        <label>Quem está indicando *</label>
+        <input type="text" id="s-addedBy" placeholder="Seu nome" />
       </div>
       <div class="ma">
         <button class="bs" onclick="fechar('ov-sub')">Cancelar</button>
@@ -507,16 +492,14 @@ document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => {
 // ══ SUBMISSÃO PÚBLICA ══
 function abrirSubmissao() {
   preencherSelectCats('s-category');
-  ['name','addedBy','sells','address','maps','photo','emoji'].forEach(f => document.getElementById('s-'+f).value='');
-  document.getElementById('s-lat').value=''; document.getElementById('s-lng').value='';
-  document.getElementById('gs-s').className='gs';
+  ['name','addedBy','sells','address','maps','emoji'].forEach(f => document.getElementById('s-'+f).value='');
   abrir('ov-sub');
 }
 
 async function submeterLoja() {
   const g = id => document.getElementById('s-'+id).value.trim();
-  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), photo:g('photo'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', lat:parseFloat(document.getElementById('s-lat').value)||null, lng:parseFloat(document.getElementById('s-lng').value)||null };
-  if (!body.name||!body.category||!body.address) { alert('Preencha nome, categoria e endereço.'); return; }
+  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo' };
+  if (!body.name||!body.category||!body.address||!body.addedBy) { alert('Preencha nome, categoria, endereço e quem está indicando.'); return; }
   const btn = document.getElementById('btn-sub');
   btn.textContent = 'Enviando…'; btn.disabled = true;
   try {
