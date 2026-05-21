@@ -494,8 +494,8 @@ let editQuals = [];
 const TERREIRO = {
   name: 'Nossa Terreira',
   emoji: '🫧',
-  lat: -30.0245,
-  lng: -51.1328,
+  lat: -30.0346,   // ← troque pela latitude real
+  lng: -51.2177,   // ← troque pela longitude real
 };
 
 const SELOS = {
@@ -894,7 +894,7 @@ function filtrados() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   return lojas.filter(l => {
     const cOk = activeCategory==='Todas' || l.category===activeCategory;
-    const qOk = !q || l.name.toLowerCase().includes(q) || l.sells.toLowerCase().includes(q) || l.category.toLowerCase().includes(q);
+    const qOk = !q || (l.name||'').toLowerCase().includes(q) || (l.sells||'').toLowerCase().includes(q) || (l.category||'').toLowerCase().includes(q);
     return cOk && qOk;
   });
 }
