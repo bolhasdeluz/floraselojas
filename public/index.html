@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guia de Lojas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fff5f7;
+    --card: #ffffff;
+    --text: #2a1a20;
+    --muted: #8a6070;
+    --accent: #d4607a;
+    --accent-dark: #b8445e;
+    --accent-light: #fde8ed;
+    --tag-bg: #fce8ef;
+    --shadow: 0 2px 16px rgba(180,60,90,0.08);
+    --shadow-hover: 0 8px 32px rgba(180,60,90,0.16);
+    --radius: 16px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #c0405a 0%, #d4607a 60%, #e07a90 100%);
+    padding: 36px 32px 28px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.875rem;
+    margin-top: 4px;
+    font-weight: 300;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  /* ── SEARCH & FILTER ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.45);
+    pointer-events: none;
+  }
+
+  #search {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    padding: 9px 14px 9px 36px;
+    outline: none;
+    width: 220px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  #search::placeholder { color: rgba(255,255,255,0.4); }
+  #search:focus { background: rgba(255,255,255,0.16); border-color: #ffb3c4; }
+
+  .filter-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    padding: 7px 14px;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ── GRID ── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 36px 24px 60px;
+  }
+
+  #count {
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-bottom: 24px;
+  }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: transform 0.22s, box-shadow 0.22s;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+  }
+
+  .card-photo {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    display: block;
+    background: var(--tag-bg);
+  }
+
+  .card-photo-placeholder {
+    width: 100%;
+    height: 190px;
+    background: linear-gradient(135deg, var(--accent-light), var(--tag-bg));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+  }
+
+  .card-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+  }
+
+  .tag {
+    background: var(--tag-bg);
+    border-radius: 20px;
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    padding: 4px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .card-sells {
+    color: var(--muted);
+    font-size: 0.855rem;
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  /* ── MAP BUTTON ── */
+  .map-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent-light);
+    border: none;
+    border-radius: 10px;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 10px 14px;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s;
+    margin-top: auto;
+  }
+
+  .map-btn:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .map-btn svg { flex-shrink: 0; }
+
+  .card-address {
+    color: var(--muted);
+    font-size: 0.8rem;
+    display: flex;
+    gap: 5px;
+    align-items: flex-start;
+    line-height: 1.4;
+  }
+
+  .card-address svg { flex-shrink: 0; margin-top: 1px; }
+
+  /* ── EMPTY ── */
+  #empty {
+    display: none;
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+
+  #empty svg { margin-bottom: 16px; opacity: 0.35; }
+  #empty p { font-size: 1rem; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    #search { width: 160px; }
+    #grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     DADOS DAS LOJAS — edite aqui!
+     Para cada loja, preencha:
+       name      → nome da loja
+       category  → categoria (aparece como tag)
+       sells     → o que vende
+       address   → endereço completo
+       photo     → URL de uma foto (ou "" para usar o emoji)
+       emoji     → emoji de fallback se não tiver foto
+       maps      → link do Google Maps (cole o link de compartilhar)
+════════════════════════════════════ -->
+<script>
+const LOJAS = [
+  {
+    name: "Empório das Ervas",
+    category: "Ervas & Naturais",
+    sells: "Ervas medicinais, óleos essenciais, chás e produtos naturais para saúde e bem-estar.",
+    address: "Rua das Flores, 142 — Centro",
+    photo: "",
+    emoji: "🌿",
+    maps: "https://maps.google.com/?q=Rua+das+Flores+142+Porto+Alegre"
+  },
+  {
+    name: "Casa de Artesanato São João",
+    category: "Artesanato",
+    sells: "Cerâmicas artesanais, tecidos bordados, esculturas em madeira e peças únicas feitas à mão.",
+    address: "Av. Independência, 780 — Floresta",
+    photo: "",
+    emoji: "🏺",
+    maps: "https://maps.google.com/?q=Av+Independencia+780+Porto+Alegre"
+  },
+  {
+    name: "Mercado do Produtor",
+    category: "Alimentos",
+    sells: "Frutas, verduras e legumes orgânicos direto do produtor, mel, queijos e embutidos coloniais.",
+    address: "Rua Voluntários da Pátria, 300 — Navegantes",
+    photo: "",
+    emoji: "🥬",
+    maps: "https://maps.google.com/?q=Rua+Voluntarios+da+Patria+300+Porto+Alegre"
+  },
+  {
+    name: "Livraria do Bairro",
+    category: "Livros & Cultura",
+    sells: "Livros novos e usados, revistas, papelaria fina, agendas e presentes para quem ama ler.",
+    address: "Rua da República, 55 — Cidade Baixa",
+    photo: "",
+    emoji: "📚",
+    maps: "https://maps.google.com/?q=Rua+da+Republica+55+Porto+Alegre"
+  },
+  {
+    name: "Tecidos & Aviamentos Bela",
+    category: "Tecidos",
+    sells: "Tecidos nacionais e importados, linhas, botões, zíperes, rendas e tudo para costura e artesanato.",
+    address: "Rua dos Andradas, 1200 — Centro Histórico",
+    photo: "",
+    emoji: "🧵",
+    maps: "https://maps.google.com/?q=Rua+dos+Andradas+1200+Porto+Alegre"
+  },
+  {
+    name: "Incensos & Aromas Oriental",
+    category: "Esotérico",
+    sells: "Incensos importados, velas artesanais, cristais, guias, resinas e produtos para rituais e meditação.",
+    address: "Rua Garibaldi, 88 — Bom Fim",
+    photo: "",
+    emoji: "🕯️",
+    maps: "https://maps.google.com/?q=Rua+Garibaldi+88+Porto+Alegre"
+  }
+];
+</script>
+
+<!-- ════════════════════════════════════
+     NÃO É NECESSÁRIO EDITAR ABAIXO
+════════════════════════════════════ -->
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>Guia de Lojas</h1>
+      <p>Referências e endereços selecionados</p>
+    </div>
+    <div class="controls">
+      <div class="search-wrap">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="search" placeholder="Buscar loja…" />
+      </div>
+      <div id="filter-btns"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <p id="count"></p>
+  <div id="grid"></div>
+  <div id="empty">
+    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <p>Nenhuma loja encontrada para esta busca.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const countEl = document.getElementById('count');
+  const searchEl = document.getElementById('search');
+  const filterWrap = document.getElementById('filter-btns');
+
+  let activeCategory = 'Todas';
+
+  // Build category list
+  const cats = ['Todas', ...new Set(LOJAS.map(l => l.category))];
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === 'Todas' ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => {
+      activeCategory = cat;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    });
+    filterWrap.appendChild(btn);
+  });
+
+  function pinIcon(color='currentColor') {
+    return `<svg width="14" height="14" fill="none" stroke="${color}" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+  }
+
+  function render() {
+    const q = searchEl.value.trim().toLowerCase();
+    const list = LOJAS.filter(l => {
+      const catOk = activeCategory === 'Todas' || l.category === activeCategory;
+      const searchOk = !q || l.name.toLowerCase().includes(q) || l.sells.toLowerCase().includes(q) || l.category.toLowerCase().includes(q);
+      return catOk && searchOk;
+    });
+
+    grid.innerHTML = '';
+    countEl.textContent = list.length + (list.length === 1 ? ' loja encontrada' : ' lojas encontradas');
+
+    if (!list.length) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.forEach((l, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.animationDelay = (i * 0.06) + 's';
+
+      const photoHtml = l.photo
+        ? `<img class="card-photo" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'card-photo-placeholder\\'>${l.emoji||'🏪'}</div>'" />`
+        : `<div class="card-photo-placeholder">${l.emoji || '🏪'}</div>`;
+
+      card.innerHTML = `
+        ${photoHtml}
+        <div class="card-body">
+          <div class="card-top">
+            <h2 class="card-name">${l.name}</h2>
+            <span class="tag">${l.category}</span>
+          </div>
+          <p class="card-sells">${l.sells}</p>
+          <p class="card-address">${pinIcon()} ${l.address}</p>
+          <a class="map-btn" href="${l.maps}" target="_blank" rel="noopener">
+            ${pinIcon('#fff')}
+            Ver no mapa
+          </a>
+        </div>`;
+
+      grid.appendChild(card);
+    });
+  }
+
+  searchEl.addEventListener('input', render);
+  render();
+})();
+</script>
+</body>
+</html>
