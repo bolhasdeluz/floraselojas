@@ -299,7 +299,6 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
     Qualidades
   </button>
   <button class="hbtn" onclick="sairAdmin()" style="background:rgba(0,0,0,.15)">Sair do admin</button>
-  <button class="hbtn" id="btn-reset-cats" onclick="resetCats()" style="background:rgba(0,0,0,.2);font-size:.72rem;display:none">⚠️ Resetar categorias</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -490,23 +489,6 @@ let terreiroMarker = null;
 let editCats = [];
 let editQuals = [];
 
-const DEFAULT_CATS = [
-  {name:'Alimentos',       emoji:'🥬'},
-  {name:'Artesanato',      emoji:'🏺'},
-  {name:'Ervas & Naturais',emoji:'🌿'},
-  {name:'Esotérico',       emoji:'🕯️'},
-  {name:'Livros & Cultura',emoji:'📚'},
-];
-
-function normalizarCats(raw) {
-  if (!Array.isArray(raw) || !raw.length) return DEFAULT_CATS;
-  if (typeof raw[0] === 'string') {
-    if (raw[0].includes('[object')) return DEFAULT_CATS; // corrompido
-    return raw.map(c => ({name:c, emoji:'🏪', private:false}));
-  }
-  return raw;
-}
-
 // ══ CONFIGURAÇÃO DO TERREIRO ══
 // Atualize as coordenadas para o endereço real do terreiro
 const TERREIRO = {
@@ -547,23 +529,14 @@ async function apiFetch(path, opts={}) {
 
 async function carregarTudo() {
   try {
-    const [lojasRaw, catsRaw, qualsRaw] = await Promise.all([
-      apiFetch('/lojas'),
+    [lojas, cats, quals] = await Promise.all([
+      apiFetch('/lojas'),   // token is auto-sent if admin is active
       apiFetch('/categorias'),
       apiFetch('/qualidades')
     ]);
-    lojas = Array.isArray(lojasRaw) ? lojasRaw : [];
-    cats  = normalizarCats(catsRaw);
-    quals = Array.isArray(qualsRaw) ? qualsRaw : [];
-  } catch(e) {
-    console.error('Erro ao carregar:', e);
-    if (!lojas.length) lojas = [];
-    if (!cats.length)  cats  = DEFAULT_CATS;
-    if (!quals.length) quals = [];
-  }
-  try { buildFilters(); } catch(e) { console.error('buildFilters:', e); }
-  try { render();       } catch(e) { console.error('render:', e); }
-  if (currentView === 'map') { try { renderMapMarkers(); } catch {} }
+  } catch { lojas = []; cats = []; quals = []; }
+  buildFilters(); render();
+  if (currentView === 'map') renderMapMarkers();
 }
 
 // ══ AUTH ══
@@ -596,23 +569,8 @@ async function ativarAdmin() {
   document.getElementById('admin-badge').style.display = '';
   document.getElementById('admin-bar').style.display = 'flex';
   document.getElementById('subtitle').textContent = '✏️ Modo edição ativo';
-  try {
-    lojas = await apiFetch('/lojas');
-    // show reset button if cats look corrupted
-    const corrupted = !cats.length || (cats[0] && typeof cats[0]==='string' && cats[0].includes('[object'));
-    document.getElementById('btn-reset-cats').style.display = corrupted ? 'flex' : 'none';
-    buildFilters(); render(); if(currentView==='map') renderMapMarkers();
-  } catch {}
-}
-
-async function resetCats() {
-  if (!confirm('Isso vai resetar as categorias para os valores padrão. Continuar?')) return;
-  try {
-    cats = await apiFetch('/reset-cats', { method: 'POST' });
-    document.getElementById('btn-reset-cats').style.display = 'none';
-    buildFilters(); render();
-    toast('✅ Categorias recuperadas! Pode adicionar as suas no painel.');
-  } catch { toast('❌ Erro ao resetar.'); }
+  // reload lojas so private ones appear
+  try { lojas = await apiFetch('/lojas'); buildFilters(); render(); if(currentView==='map') renderMapMarkers(); } catch {}
 }
 
 async function sairAdmin() {
@@ -936,7 +894,7 @@ function filtrados() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   return lojas.filter(l => {
     const cOk = activeCategory==='Todas' || l.category===activeCategory;
-    const qOk = !q || (l.name||'').toLowerCase().includes(q) || (l.sells||'').toLowerCase().includes(q) || (l.category||'').toLowerCase().includes(q);
+    const qOk = !q || l.name.toLowerCase().includes(q) || l.sells.toLowerCase().includes(q) || l.category.toLowerCase().includes(q);
     return cOk && qOk;
   });
 }
@@ -1174,4 +1132,3 @@ document.getElementById('search').addEventListener('input',()=>{ render(); if(cu
 </script>
 </body>
 </html>
- 
