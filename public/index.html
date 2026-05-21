@@ -507,6 +507,17 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
   </div>
 </div>
 
+<!-- ════ MODAL: DETALHE DA LOJA ════ -->
+<div class="ov" id="ov-detalhe">
+  <div class="mo" style="max-width:400px">
+    <div class="mh">
+      <h2 id="d-title" style="font-size:1.1rem"></h2>
+      <button class="mc" onclick="fechar('ov-detalhe')">×</button>
+    </div>
+    <div class="mb2" id="d-body" style="gap:10px"></div>
+  </div>
+</div>
+
 <!-- ════ MODAL: REVISÃO DE LOJAS (admin) ════ -->
 <div class="ov" id="ov-revisao">
   <div class="mo" style="max-width:640px">
@@ -647,6 +658,32 @@ async function ativarAdmin() {
     document.getElementById('btn-reset-cats').style.display = corrupted ? 'flex' : 'none';
     buildFilters(); render(); if(currentView==='map') renderMapMarkers();
   } catch {}
+}
+
+// ══ DETALHE DA LOJA ══
+function abrirDetalhe(id) {
+  const l = lojas.find(x => x.id === id); if (!l) return;
+  const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
+  const waLink = waNum ? `https://wa.me/55${waNum}` : '';
+  const qualsBadges = l.quals&&l.quals.length ? l.quals.map(q=>`<span class="qual-badge">${q}</span>`).join('') : '';
+
+  document.getElementById('d-title').textContent = l.name;
+  document.getElementById('d-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:1.6rem">${getEmoji(l)}</span>
+      <span class="tag">${l.category}</span>
+      ${l.selo && SELOS[l.selo] ? `<span class="selo-inline">${SELOS[l.selo]}</span>` : ''}
+    </div>
+    ${l.sells ? `<p style="color:var(--muted);font-size:.85rem;line-height:1.5">${l.sells}</p>` : ''}
+    <p style="color:var(--muted);font-size:.82rem;display:flex;gap:5px;align-items:flex-start">${pin()} ${l.address}</p>
+    ${(l.hours_week||l.hours_sat) ? `<div class="card-hours">${l.hours_week?`<span>🕐 Seg–Sex: ${l.hours_week}</span>`:''} ${l.hours_sat?`<span>Sáb: ${l.hours_sat}</span>`:''}</div>` : ''}
+    ${qualsBadges ? `<div class="quals-wrap">${qualsBadges}</div>` : ''}
+    ${l.addedBy ? `<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>` : ''}
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="mb" onclick="fechar('ov-detalhe');abrirNoMapa(${l.id})" style="flex:1">${pin('#fff')} Ver no mapa</button>
+      ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">${waSvg} ${l.phone}</a>` : ''}
+    </div>`;
+  abrir('ov-detalhe');
 }
 
 // ══ REVISÃO DE LOJAS ══
@@ -1216,23 +1253,24 @@ function render() {
       const item = document.createElement('div');
       item.className = 'list-item';
       item.style.animationDelay = (i*.02)+'s';
-      const seloLabel = l.selo && SELOS[l.selo] ? `<span style="background:linear-gradient(135deg,#8c5a00,#c88c00);border-radius:20px;color:#fff8e0;font-size:.62rem;font-weight:600;padding:2px 7px;flex-shrink:0">${SELOS[l.selo]}</span>` : '';
+      item.style.cursor = 'pointer';
+      const seloIcon = l.selo ? `<span style="color:#c88c00;font-size:.85rem;flex-shrink:0" title="${SELOS[l.selo]||''}">✦</span>` : '';
       item.innerHTML = `
         <div class="list-emoji">${getEmoji(l)}</div>
         <div class="list-main">
           <div class="list-top">
             <span class="list-name">${l.name}</span>
             <span class="tag" style="font-size:.62rem;padding:2px 7px;flex-shrink:0">${l.category}</span>
-            ${seloLabel}
+            ${seloIcon}
           </div>
           <div class="list-addr">${l.address}</div>
-          ${(l.hours_week||l.hours_sat)?`<div class="list-meta"><span>${l.hours_week?'Seg–Sex: '+l.hours_week:''}</span><span>${l.hours_sat?'Sáb: '+l.hours_sat:''}</span></div>`:''}
         </div>
         <div class="list-actions">
-          <button class="mb" onclick="abrirNoMapa(${l.id})" style="padding:6px 8px;font-size:.7rem;gap:3px">${pin('#fff')} Mapa</button>
-          ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener" style="padding:6px 8px">${waSvg}</a>` : ''}
+          <button class="mb" onclick="event.stopPropagation();abrirNoMapa(${l.id})" style="padding:7px 9px">${pin('#fff')}</button>
+          ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener" style="padding:7px 9px" onclick="event.stopPropagation()">${waSvg}</a>` : ''}
           ${editBtn}
         </div>`;
+      item.addEventListener('click', () => abrirDetalhe(l.id));
       grid.appendChild(item);
     } else {
       const card = document.createElement('div');
