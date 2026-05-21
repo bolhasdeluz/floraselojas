@@ -160,8 +160,9 @@ export async function onRequest({ request, env, params }) {
     const body = await request.json();
     if (!Array.isArray(body)) return json({ error: 'Array esperado' }, 400);
     const cats = body.map(c => ({
-      name: String(c.name||c).slice(0, 60),
-      emoji: String(c.emoji||'🏪').slice(0, 4)
+      name:    String(c.name||c).slice(0, 60),
+      emoji:   String(c.emoji||'🏪').slice(0, 4),
+      private: Boolean(c.private || false)
     })).filter(c => c.name);
     await env.LOJAS_KV.put('categorias', JSON.stringify(cats));
     return json(cats);
