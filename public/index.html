@@ -190,6 +190,16 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 .cat-del{background:none;border:none;color:#e0a0a0;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;transition:color .18s}
 .cat-del:hover{color:#e05555}
 
+/* revisão */
+.rev-item{display:flex;align-items:center;gap:12px;background:#fafafa;border:1.5px solid #f0d0d8;border-radius:12px;padding:11px 14px;cursor:pointer;transition:all .18s}
+.rev-item:hover{background:var(--light);border-color:var(--accent)}
+.rev-item.completo{border-color:#c8e6c9;background:#f0faf0}
+.rev-nome{font-family:'Playfair Display',serif;font-size:.9rem;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rev-tags{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0}
+.rev-tag{border-radius:20px;font-size:.68rem;font-weight:600;padding:2px 8px;white-space:nowrap}
+.rev-tag.ok{background:#e8f5e9;color:#2e7d32}
+.rev-tag.miss{background:#fdecea;color:#c62828}
+
 /* geocode */
 .gs{font-size:.73rem;padding:4px 10px;border-radius:8px;display:none}
 .gs.load{background:#fff3cd;color:#7a5c00;display:block}
@@ -299,7 +309,10 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     Qualidades
   </button>
-  <button class="hbtn" onclick="sairAdmin()" style="background:rgba(0,0,0,.15)">Sair do admin</button>
+  <button class="hbtn" onclick="abrirRevisao()">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Revisar lojas
+  </button>
   <button class="hbtn" id="btn-reset-cats" onclick="resetCats()" style="background:rgba(0,0,0,.2);font-size:.72rem;display:none">⚠️ Resetar categorias</button>
 </div>
 
@@ -478,6 +491,20 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
   </div>
 </div>
 
+<!-- ════ MODAL: REVISÃO DE LOJAS (admin) ════ -->
+<div class="ov" id="ov-revisao">
+  <div class="mo" style="max-width:640px">
+    <div class="mh">
+      <h2>Revisão de lojas</h2>
+      <button class="mc" onclick="fechar('ov-revisao')">×</button>
+    </div>
+    <div class="mb2">
+      <p style="color:var(--muted);font-size:.83rem">Clique em qualquer loja para editar e preencher o que falta.</p>
+      <div id="revisao-lista" style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;padding-right:4px"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = '/api';
 let adminToken = null;
@@ -604,6 +631,50 @@ async function ativarAdmin() {
     document.getElementById('btn-reset-cats').style.display = corrupted ? 'flex' : 'none';
     buildFilters(); render(); if(currentView==='map') renderMapMarkers();
   } catch {}
+}
+
+// ══ REVISÃO DE LOJAS ══
+function abrirRevisao() {
+  const lista = document.getElementById('revisao-lista');
+  lista.innerHTML = '';
+
+  const CAMPOS = [
+    { key: 'sells',   label: 'O que vende' },
+    { key: 'maps',    label: 'Link Maps'   },
+    { key: 'phone',   label: 'Telefone'    },
+    { key: '_coords', label: 'Coordenadas' },
+  ];
+
+  // sort: incomplete first
+  const sorted = [...lojas].sort((a, b) => {
+    const score = l => [l.sells, l.maps, l.phone, (l.lat&&l.lng)?'ok':null].filter(Boolean).length;
+    return score(a) - score(b);
+  });
+
+  sorted.forEach(l => {
+    const faltando = CAMPOS.filter(c => {
+      if (c.key === '_coords') return !l.lat || !l.lng;
+      return !l[c.key];
+    });
+    const completo = faltando.length === 0;
+
+    const div = document.createElement('div');
+    div.className = 'rev-item' + (completo ? ' completo' : '');
+    div.onclick = () => { fechar('ov-revisao'); abrirEditar(l.id); };
+
+    const tags = CAMPOS.map(c => {
+      const falta = c.key === '_coords' ? (!l.lat || !l.lng) : !l[c.key];
+      return `<span class="rev-tag ${falta ? 'miss' : 'ok'}">${falta ? '✗' : '✓'} ${c.label}</span>`;
+    }).join('');
+
+    div.innerHTML = `
+      <span style="font-size:1.3rem">${getEmoji(l)}</span>
+      <span class="rev-nome">${l.name}</span>
+      <div class="rev-tags">${tags}</div>`;
+    lista.appendChild(div);
+  });
+
+  abrir('ov-revisao');
 }
 
 async function resetCats() {
