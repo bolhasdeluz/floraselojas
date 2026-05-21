@@ -485,8 +485,18 @@ let quals = [];
 let currentView = 'grid';
 let activeCategory = 'Todas';
 let map = null, markers = [];
+let terreiroMarker = null;
 let editCats = [];
 let editQuals = [];
+
+// ══ CONFIGURAÇÃO DO TERREIRO ══
+// Atualize as coordenadas para o endereço real do terreiro
+const TERREIRO = {
+  name: 'Nossa Terreira',
+  emoji: '🫧',
+  lat: -30.0346,   // ← troque pela latitude real
+  lng: -51.2177,   // ← troque pela longitude real
+};
 
 const SELOS = {
   'indicacao': '✨ Indicação da Mãe de Santo',
@@ -519,7 +529,11 @@ async function apiFetch(path, opts={}) {
 
 async function carregarTudo() {
   try {
-    [lojas, cats, quals] = await Promise.all([apiFetch('/lojas'), apiFetch('/categorias'), apiFetch('/qualidades')]);
+    [lojas, cats, quals] = await Promise.all([
+      apiFetch('/lojas'),   // token is auto-sent if admin is active
+      apiFetch('/categorias'),
+      apiFetch('/qualidades')
+    ]);
   } catch { lojas = []; cats = []; quals = []; }
   buildFilters(); render();
   if (currentView === 'map') renderMapMarkers();
@@ -550,19 +564,22 @@ async function verificarSenha() {
   }
 }
 
-function ativarAdmin() {
+async function ativarAdmin() {
   document.body.classList.add('admin-mode');
   document.getElementById('admin-badge').style.display = '';
   document.getElementById('admin-bar').style.display = 'flex';
   document.getElementById('subtitle').textContent = '✏️ Modo edição ativo';
+  // reload lojas so private ones appear
+  try { lojas = await apiFetch('/lojas'); buildFilters(); render(); if(currentView==='map') renderMapMarkers(); } catch {}
 }
 
-function sairAdmin() {
+async function sairAdmin() {
   adminToken = null;
   document.body.classList.remove('admin-mode');
   document.getElementById('admin-badge').style.display = 'none';
   document.getElementById('admin-bar').style.display = 'none';
   document.getElementById('subtitle').textContent = 'Referências e endereços da comunidade';
+  try { lojas = await apiFetch('/lojas'); buildFilters(); render(); if(currentView==='map') renderMapMarkers(); } catch {}
 }
 
 // ══ MODAIS ══
@@ -686,9 +703,14 @@ function renderCatsList() {
   editCats.forEach((c, i) => {
     const div = document.createElement('div');
     div.className='cat-item';
+    div.style.borderColor = c.private ? '#c8a0d0' : '';
+    div.style.background = c.private ? '#fdf5ff' : '';
     div.innerHTML = `
       <input class="cat-emoji-input" type="text" value="${c.emoji||'🏪'}" maxlength="4" oninput="editCats[${i}].emoji=this.value" title="Emoji" />
       <input class="cat-name-input" type="text" value="${c.name||''}" oninput="editCats[${i}].name=this.value" placeholder="Nome da categoria" />
+      <label title="Categoria privada (só admin vê)" style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:.72rem;color:#9a70a0;white-space:nowrap;flex-shrink:0">
+        <input type="checkbox" ${c.private?'checked':''} onchange="editCats[${i}].private=this.checked;renderCatsList()" style="accent-color:#9a70a0;width:13px;height:13px" />🔒
+      </label>
       <button class="cat-del" onclick="removeCat(${i})" title="Remover">×</button>`;
     el.appendChild(div);
   });
@@ -752,9 +774,9 @@ async function salvarQuals() {
 
 function preencherSelectCats(selectId, selected='') {
   const sel = document.getElementById(selectId); sel.innerHTML='';
-  cats.forEach(c => {
+  cats.filter(c => !c.private || adminToken).forEach(c => {
     const o=document.createElement('option');
-    o.value=c.name; o.textContent=`${c.emoji} ${c.name}`;
+    o.value=c.name; o.textContent=`${c.emoji} ${c.name}${c.private?' 🔒':''}`;
     if(c.name===selected) o.selected=true;
     sel.appendChild(o);
   });
@@ -877,10 +899,55 @@ function filtrados() {
   });
 }
 
+function criarIconeTerreiro() {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      position:relative;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div style="
+        background:linear-gradient(135deg,#c8a000,#f0c830,#c8a000);
+        border:3px solid #fff;border-radius:50% 50% 50% 0;
+        width:44px;height:44px;
+        display:flex;align-items:center;justify-content:center;
+        font-size:20px;
+        box-shadow:0 4px 16px rgba(200,160,0,.6),0 0 0 3px rgba(200,160,0,.25);
+        transform:rotate(-45deg)">
+        <span style="transform:rotate(45deg)">🫧</span>
+      </div>
+      <div style="
+        background:linear-gradient(135deg,#c8a000,#e8c000);
+        border-radius:20px;color:#fff;
+        font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;
+        padding:2px 8px;white-space:nowrap;
+        box-shadow:0 2px 8px rgba(200,160,0,.4);
+        letter-spacing:.03em;margin-top:2px">
+        Nossa Terreira
+      </div>
+    </div>`,
+    iconSize: [80, 68],
+    iconAnchor: [22, 47],
+    popupAnchor: [18, -50]
+  });
+}
+
+function adicionarPinTerreiro() {
+  if (!map || !TERREIRO.lat || !TERREIRO.lng) return;
+  if (terreiroMarker) { terreiroMarker.remove(); terreiroMarker = null; }
+  terreiroMarker = L.marker([TERREIRO.lat, TERREIRO.lng], {
+    icon: criarIconeTerreiro(),
+    zIndexOffset: 1000  // always on top
+  }).addTo(map)
+    .bindPopup(`<div class="pi">
+      <div class="pn" style="display:flex;align-items:center;gap:6px">🫧 ${TERREIRO.name}</div>
+      <div class="ps" style="color:#9a7000">Nosso espaço sagrado</div>
+    </div>`, { maxWidth: 200 });
+}
+
 function initMap() {
   if (!map) {
     map = L.map('map');
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap', maxZoom:19 }).addTo(map);
+    adicionarPinTerreiro();
   }
   renderMapMarkers();
 }
@@ -937,7 +1004,7 @@ function popupHtml(l) {
 
 function renderMapMarkers() {
   if (!map) return;
-  markers.forEach(m=>m.remove()); markers=[];
+  markers.forEach(m=>m.remove()); markers=[];  // terreiroMarker is intentionally kept
   Object.keys(markerById).forEach(k => delete markerById[k]);
 
   const lista = filtrados().filter(l=>l.lat&&l.lng);
@@ -960,7 +1027,7 @@ function buildFilters() {
   const sel = document.getElementById('filter-select');
   const prev = sel.value || 'Todas';
   sel.innerHTML = '';
-  const allCats = ['Todas', ...cats.map(c=>c.name)];
+  const allCats = ['Todas', ...cats.filter(c => !c.private || adminToken).map(c=>c.name)];
   allCats.forEach(name => {
     const cat = cats.find(c=>c.name===name);
     const o = document.createElement('option');
