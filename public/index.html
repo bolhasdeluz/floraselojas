@@ -49,19 +49,25 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 #filter-select{background:#fdf0f3;border:1.5px solid #f0d0d8;border-radius:10px;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500;padding:7px 32px 7px 12px;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='12' fill='none' stroke='%238a6070' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:140px;transition:border-color .18s}
 #filter-select:focus{border-color:var(--accent)}
 
-/* ── GRID ── */
+/* ── GRID / LIST TOGGLE ── */
 #vg{flex:1}
 .gm{max-width:1200px;margin:0 auto;padding:22px 24px 90px}
 #count{color:var(--muted);font-size:.79rem;margin-bottom:16px}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:20px}
 
-/* ── CARD ── */
+.layout-btns{display:flex;gap:2px;background:#f5eaed;border-radius:8px;padding:3px}
+.layout-btn{background:none;border:none;border-radius:6px;color:var(--muted);cursor:pointer;padding:5px 8px;transition:all .18s;display:flex;align-items:center}
+.layout-btn.active{background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(180,60,90,.12)}
+
+/* ── CARDS (sem foto) ── */
+#grid.layout-card{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
 .card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transition:transform .22s,box-shadow .22s;display:flex;flex-direction:column;animation:fu .3s ease both}
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.card:hover{transform:translateY(-4px);box-shadow:var(--shadow-h)}
-.cp{width:100%;height:170px;object-fit:cover;display:block}
-.cpp{width:100%;height:170px;background:linear-gradient(135deg,var(--light),var(--tag));display:flex;align-items:center;justify-content:center;font-size:2.6rem}
-.cb2{padding:15px;flex:1;display:flex;flex-direction:column;gap:8px}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-h)}
+/* emoji header strip (replaces photo) */
+.card-emoji-bar{background:linear-gradient(135deg,var(--light),var(--tag));padding:16px 16px 12px;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden}
+.card-emoji{font-size:1.8rem;line-height:1}
+.card-emoji-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:var(--text);line-height:1.25;flex:1}
+.cb2{padding:14px;flex:1;display:flex;flex-direction:column;gap:7px}
 .ct{display:flex;align-items:flex-start;justify-content:space-between;gap:7px}
 .cn{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;line-height:1.25}
 .tag{background:var(--tag);border-radius:20px;color:var(--accent);font-size:.67rem;font-weight:500;letter-spacing:.04em;padding:3px 9px;white-space:nowrap;flex-shrink:0;text-transform:uppercase}
@@ -69,6 +75,20 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 .ca{color:var(--muted);font-size:.77rem;display:flex;gap:4px;align-items:flex-start;line-height:1.4}
 .ca svg{flex-shrink:0;margin-top:1px}
 .added-by{color:#c8a0a8;font-size:.72rem;font-style:italic}
+
+/* ── LIST VIEW ── */
+#grid.layout-list{display:flex;flex-direction:column;gap:10px}
+.list-item{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;display:flex;align-items:center;gap:14px;transition:box-shadow .2s;animation:fu .3s ease both}
+.list-item:hover{box-shadow:var(--shadow-h)}
+.list-emoji{font-size:1.6rem;flex-shrink:0;width:38px;text-align:center}
+.list-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.list-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.list-name{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:600;color:var(--text)}
+.list-sells{color:var(--muted);font-size:.8rem;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-addr{color:var(--muted);font-size:.76rem;display:flex;align-items:center;gap:4px}
+.list-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.list-actions{display:flex;gap:7px;align-items:center;flex-shrink:0}
+.list-item.tem-selo{box-shadow:0 2px 16px rgba(180,60,90,.08),0 0 0 2px #e8c86080}
 
 /* ── QUALIDADES ── */
 .quals-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
@@ -85,19 +105,12 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 /* ── SELO DA MÃE DE SANTO ── */
 .card.tem-selo{box-shadow:0 2px 16px rgba(180,60,90,.08),0 0 0 2px #e8c86080}
 .card.tem-selo:hover{box-shadow:0 8px 32px rgba(180,60,90,.16),0 0 0 2px #d4a83080}
-.photo-wrap{position:relative;overflow:hidden}
 .selo-faixa{
   position:absolute;bottom:0;left:0;right:0;
-  background:linear-gradient(135deg,rgba(140,90,0,.88),rgba(200,140,0,.92));
-  backdrop-filter:blur(2px);
-  color:#fff8e0;
-  font-family:'DM Sans',sans-serif;font-size:.74rem;font-weight:600;
-  letter-spacing:.03em;
-  padding:6px 12px;
-  display:flex;align-items:center;gap:6px;
-  text-shadow:0 1px 3px rgba(0,0,0,.3);
+  background:linear-gradient(135deg,rgba(140,90,0,.85),rgba(200,140,0,.9));
+  color:#fff8e0;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;
+  letter-spacing:.03em;padding:5px 12px;display:flex;align-items:center;gap:6px;
 }
-.selo-faixa::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,220,80,.15),transparent);pointer-events:none}
 /* popup selo */
 .pselo{
   background:linear-gradient(135deg,#8c5a00,#c88c00);
@@ -173,6 +186,9 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 #pin-input:focus{border-color:var(--accent)}
 #pin-error{color:#e05555;font-size:.79rem;display:none}
 
+.cat-del{background:none;border:none;color:#e0a0a0;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;transition:color .18s}
+.cat-del:hover{color:#e05555}
+
 /* geocode */
 .gs{font-size:.73rem;padding:4px 10px;border-radius:8px;display:none}
 .gs.load{background:#fff3cd;color:#7a5c00;display:block}
@@ -191,9 +207,8 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 
 /* cats editor */
 .cat-item{display:flex;align-items:center;gap:8px;background:#fdf5f7;border:1.5px solid #f0d0d8;border-radius:10px;padding:8px 12px}
-.cat-item span{flex:1;font-size:.88rem}
-.cat-del{background:none;border:none;color:#e0a0a0;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;transition:color .18s}
-.cat-del:hover{color:#e05555}
+.cat-emoji-input{background:transparent;border:none;outline:none;font-size:1.2rem;width:36px;text-align:center;cursor:text}
+.cat-name-input{flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);padding:0}
 
 @media(max-width:600px){
   #search{width:135px}
@@ -243,6 +258,15 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
     </div>
     <div class="div"></div>
     <select id="filter-select" onchange="setCategoria(this.value)"></select>
+    <div style="flex:1"></div>
+    <div class="layout-btns">
+      <button class="layout-btn active" id="btn-layout-card" onclick="setLayout('card')" title="Cards">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <button class="layout-btn" id="btn-layout-list" onclick="setLayout('list')" title="Lista">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -294,12 +318,10 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
       <div class="r2">
         <div class="f">
           <label>Categoria *</label>
-          <select id="s-category"></select>
+          <select id="s-category" onchange="onCategoryChange(this,'s-emoji')"></select>
         </div>
-        <div class="f">
-          <label>Emoji (ícone)</label>
-          <input type="text" id="s-emoji" placeholder="🏪" maxlength="4" />
-        </div>
+        <div class="f" style="display:none">
+          <input type="text" id="s-emoji" maxlength="4" /></div>
       </div>
       <div class="f">
         <label>Endereço *</label>
@@ -367,9 +389,9 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
       <div class="r2">
         <div class="f">
           <label>Categoria *</label>
-          <select id="e-category"></select>
+          <select id="e-category" onchange="onCategoryChange(this,'e-emoji')"></select>
         </div>
-        <div class="f"><label>Emoji</label><input type="text" id="e-emoji" maxlength="4" /></div>
+        <div style="display:none"><input type="text" id="e-emoji" maxlength="4" /></div>
       </div>
       <div class="f"><label>O que vende</label><textarea id="e-sells"></textarea></div>
       <div class="f">
@@ -420,6 +442,7 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
       <p style="color:var(--muted);font-size:.83rem;line-height:1.5">Estas são as categorias disponíveis quando alguém indica uma loja. Você pode adicionar ou remover.</p>
       <div id="cats-list" style="display:flex;flex-direction:column;gap:8px"></div>
       <div style="display:flex;gap:8px">
+        <input type="text" id="new-cat-emoji" placeholder="🏪" maxlength="4" style="background:#fafafa;border:1.5px solid #eee;border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:1.1rem;padding:9px 10px;outline:none;width:52px;text-align:center;flex-shrink:0" />
         <input type="text" id="new-cat" placeholder="Nova categoria…" style="background:#fafafa;border:1.5px solid #eee;border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.87rem;padding:9px 12px;outline:none;flex:1;transition:border-color .18s" />
         <button class="bp" style="flex:0 0 auto;padding:9px 16px" onclick="adicionarCat()">Adicionar</button>
       </div>
@@ -568,7 +591,10 @@ function getCheckedQuals(containerId) {
 // ══ SUBMISSÃO PÚBLICA ══
 function abrirSubmissao() {
   preencherSelectCats('s-category');
-  ['name','addedBy','sells','address','maps','emoji','phone'].forEach(f => document.getElementById('s-'+f).value='');
+  ['name','addedBy','sells','address','maps','phone'].forEach(f => document.getElementById('s-'+f).value='');
+  // auto-fill emoji from first category
+  const firstCat = cats[0];
+  if (firstCat) document.getElementById('s-emoji').value = firstCat.emoji;
   renderQualChecks('s-quals');
   abrir('ov-sub');
 }
@@ -612,6 +638,9 @@ function abrirEditar(id) {
   });
   document.getElementById('gs-e').className='gs';
   preencherSelectCats('e-category', l.category);
+  // set emoji from category (or stored value)
+  const cat = cats.find(c=>c.name===l.category);
+  document.getElementById('e-emoji').value = l.emoji || (cat ? cat.emoji : '🏪');
   document.getElementById('edit-actions').innerHTML = `<button class="bd" onclick="excluirLoja(${id})">🗑 Excluir</button><button class="bs" onclick="fechar('ov-edit')">Cancelar</button><button class="bp" onclick="salvarEdicao()">Salvar</button>`;
   abrir('ov-edit');
 }
@@ -657,7 +686,10 @@ function renderCatsList() {
   editCats.forEach((c, i) => {
     const div = document.createElement('div');
     div.className='cat-item';
-    div.innerHTML = `<input type="text" value="${c}" oninput="editCats[${i}]=this.value" style="flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);padding:0" /><button class="cat-del" onclick="removeCat(${i})" title="Remover">×</button>`;
+    div.innerHTML = `
+      <input class="cat-emoji-input" type="text" value="${c.emoji||'🏪'}" maxlength="4" oninput="editCats[${i}].emoji=this.value" title="Emoji" />
+      <input class="cat-name-input" type="text" value="${c.name||''}" oninput="editCats[${i}].name=this.value" placeholder="Nome da categoria" />
+      <button class="cat-del" onclick="removeCat(${i})" title="Remover">×</button>`;
     el.appendChild(div);
   });
 }
@@ -665,9 +697,12 @@ function renderCatsList() {
 function removeCat(i) { editCats.splice(i,1); renderCatsList(); }
 
 function adicionarCat() {
-  const v = document.getElementById('new-cat').value.trim();
-  if (!v || editCats.includes(v)) return;
-  editCats.push(v); document.getElementById('new-cat').value='';
+  const name = document.getElementById('new-cat').value.trim();
+  const emoji = document.getElementById('new-cat-emoji').value.trim() || '🏪';
+  if (!name || editCats.find(c=>c.name===name)) return;
+  editCats.push({name, emoji});
+  document.getElementById('new-cat').value='';
+  document.getElementById('new-cat-emoji').value='';
   renderCatsList();
 }
 
@@ -717,7 +752,21 @@ async function salvarQuals() {
 
 function preencherSelectCats(selectId, selected='') {
   const sel = document.getElementById(selectId); sel.innerHTML='';
-  cats.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===selected) o.selected=true; sel.appendChild(o); });
+  cats.forEach(c => {
+    const o=document.createElement('option');
+    o.value=c.name; o.textContent=`${c.emoji} ${c.name}`;
+    if(c.name===selected) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+// Auto-fill emoji when category changes
+function onCategoryChange(selectEl, emojiFieldId) {
+  const cat = cats.find(c => c.name === selectEl.value);
+  if (cat) {
+    const ef = document.getElementById(emojiFieldId);
+    if (ef && !ef.dataset.manuallySet) ef.value = cat.emoji;
+  }
 }
 
 // ══ EXTRAI DADOS DO LINK DO GOOGLE MAPS ══
@@ -863,7 +912,7 @@ async function abrirNoMapa(id) {
     l.lat = parseFloat(data[0].lat);
     l.lng = parseFloat(data[0].lon);
     // Add marker for this store
-    const m = L.marker([l.lat, l.lng], { icon: criarIcone(l.emoji) }).addTo(map);
+    const m = L.marker([l.lat, l.lng], { icon: criarIcone(getEmoji(l)) }).addTo(map);
     m.bindPopup(popupHtml(l), { maxWidth: 260 });
     markerById[id] = m;
     map.flyTo([l.lat, l.lng], 16, { duration: 1 });
@@ -897,7 +946,7 @@ function renderMapMarkers() {
   if (!lista.length) return;
   const bounds=[];
   lista.forEach(l=>{
-    const m = L.marker([l.lat,l.lng],{icon:criarIcone(l.emoji)}).addTo(map).bindPopup(popupHtml(l), {maxWidth:260});
+    const m = L.marker([l.lat,l.lng],{icon:criarIcone(getEmoji(l))}).addTo(map).bindPopup(popupHtml(l), {maxWidth:260});
     markers.push(m);
     markerById[l.id] = m;
     bounds.push([l.lat,l.lng]);
@@ -911,11 +960,13 @@ function buildFilters() {
   const sel = document.getElementById('filter-select');
   const prev = sel.value || 'Todas';
   sel.innerHTML = '';
-  const cats = ['Todas', ...new Set(lojas.map(l => l.category))];
-  cats.forEach(cat => {
+  const allCats = ['Todas', ...cats.map(c=>c.name)];
+  allCats.forEach(name => {
+    const cat = cats.find(c=>c.name===name);
     const o = document.createElement('option');
-    o.value = cat; o.textContent = cat;
-    if (cat === prev) o.selected = true;
+    o.value = name;
+    o.textContent = cat ? `${cat.emoji} ${name}` : name;
+    if (name === prev) o.selected = true;
     sel.appendChild(o);
   });
   activeCategory = sel.value;
@@ -927,39 +978,84 @@ function setCategoria(val) {
   if (currentView === 'map') renderMapMarkers();
 }
 
+let currentLayout = 'card';
+
+function getEmoji(l) {
+  if (l.emoji && l.emoji !== '🏪') return l.emoji;
+  const cat = cats.find(c => c.name === l.category);
+  return cat ? cat.emoji : (l.emoji || '🏪');
+}
+  currentLayout = l;
+  document.getElementById('btn-layout-card').classList.toggle('active', l==='card');
+  document.getElementById('btn-layout-list').classList.toggle('active', l==='list');
+  render();
+}
+
 const pin=(c='currentColor')=>`<svg width="12" height="12" fill="none" stroke="${c}" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+const waSvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.143a.5.5 0 0 0 .6.6l5.291-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.65-.52-5.153-1.424l-.37-.22-3.136.874.875-3.136-.22-.37A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
 
 function render() {
-  const lista=filtrados();
-  const grid=document.getElementById('grid'); grid.innerHTML='';
-  document.getElementById('count').textContent=lista.length+(lista.length===1?' loja':' lojas');
-  document.getElementById('empty').style.display=lista.length?'none':'block';
-  lista.forEach((l,i)=>{
-    const card=document.createElement('div');
-    card.className='card'+(l.selo?` tem-selo`:''); card.style.animationDelay=(i*.05)+'s';
-    const seloFaixa = l.selo && SELOS[l.selo] ? `<div class="selo-faixa">${SELOS[l.selo]}</div>` : '';
+  const lista = filtrados();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  grid.className = 'layout-' + currentLayout;
+  document.getElementById('count').textContent = lista.length + (lista.length===1?' loja':' lojas');
+  document.getElementById('empty').style.display = lista.length ? 'none' : 'block';
+
+  lista.forEach((l, i) => {
     const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
     const waLink = waNum ? `https://wa.me/55${waNum}` : '';
-    const waBtn = waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.143a.5.5 0 0 0 .6.6l5.291-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.65-.52-5.153-1.424l-.37-.22-3.136.874.875-3.136-.22-.37A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>WhatsApp</a>` : '';
-    const ph = l.photo
-      ? `<div class="photo-wrap"><img class="cp" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'cpp\\'>${l.emoji||'🏪'}</div>'">${seloFaixa}</div>`
-      : `<div class="photo-wrap"><div class="cpp">${l.emoji||'🏪'}</div>${seloFaixa}</div>`;
-    card.innerHTML=`${ph}
-      <div class="cb2">
-        <div class="ct"><h2 class="cn">${l.name}</h2><span class="tag">${l.category}</span></div>
-        <p class="cs">${l.sells||''}</p>
-        <p class="ca">${pin()} ${l.address}</p>
-        ${l.addedBy?`<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>`:''}
-        ${l.quals&&l.quals.length?`<div class="quals-wrap">${l.quals.map(q=>`<span class="qual-badge">${q}</span>`).join('')}</div>`:''}
-        <div class="cf">
-          <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
-          ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.143a.5.5 0 0 0 .6.6l5.291-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.65-.52-5.153-1.424l-.37-.22-3.136.874.875-3.136-.22-.37A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>${l.phone}</a>` : ''}
-          <button class="eb" onclick="abrirEditar(${l.id})" title="Editar">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
+    const seloFaixa = l.selo && SELOS[l.selo] ? `<div class="selo-faixa">${SELOS[l.selo]}</div>` : '';
+    const qualsBadges = l.quals&&l.quals.length ? l.quals.map(q=>`<span class="qual-badge">${q}</span>`).join('') : '';
+    const editBtn = `<button class="eb" onclick="abrirEditar(${l.id})" title="Editar"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+
+    if (currentLayout === 'list') {
+      const item = document.createElement('div');
+      item.className = 'list-item' + (l.selo ? ' tem-selo' : '');
+      item.style.animationDelay = (i*.04)+'s';
+      item.innerHTML = `
+        <div class="list-emoji">${getEmoji(l)}</div>
+        <div class="list-main">
+          <div class="list-top">
+            <span class="list-name">${l.name}</span>
+            <span class="tag">${l.category}</span>
+            ${l.selo && SELOS[l.selo] ? `<span style="background:linear-gradient(135deg,#8c5a00,#c88c00);border-radius:20px;color:#fff8e0;font-size:.67rem;font-weight:600;padding:3px 9px">${SELOS[l.selo]}</span>` : ''}
+          </div>
+          ${l.sells ? `<div class="list-sells">${l.sells}</div>` : ''}
+          <div class="list-addr">${pin()} ${l.address}</div>
+          ${qualsBadges ? `<div class="list-badges">${qualsBadges}</div>` : ''}
+          ${l.addedBy ? `<div class="added-by" style="margin-top:1px">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</div>` : ''}
         </div>
-      </div>`;
-    grid.appendChild(card);
+        <div class="list-actions">
+          <button class="mb" onclick="abrirNoMapa(${l.id})" style="padding:8px 10px;font-size:.75rem">${pin('#fff')}</button>
+          ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener" style="padding:8px 10px">${waSvg}</a>` : ''}
+          ${editBtn}
+        </div>`;
+      grid.appendChild(item);
+    } else {
+      const card = document.createElement('div');
+      card.className = 'card' + (l.selo ? ' tem-selo' : '');
+      card.style.animationDelay = (i*.05)+'s';
+      card.innerHTML = `
+        <div class="card-emoji-bar" style="position:relative">
+          <div class="card-emoji">${getEmoji(l)}</div>
+          <div class="card-emoji-name">${l.name}</div>
+          <span class="tag" style="flex-shrink:0">${l.category}</span>
+          ${seloFaixa}
+        </div>
+        <div class="cb2">
+          ${l.sells ? `<p class="cs">${l.sells}</p>` : ''}
+          <p class="ca">${pin()} ${l.address}</p>
+          ${l.addedBy ? `<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>` : ''}
+          ${qualsBadges ? `<div class="quals-wrap">${qualsBadges}</div>` : ''}
+          <div class="cf">
+            <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
+            ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">${waSvg} ${l.phone}</a>` : ''}
+            ${editBtn}
+          </div>
+        </div>`;
+      grid.appendChild(card);
+    }
   });
 }
 
