@@ -64,10 +64,11 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-h)}
 /* emoji header strip (replaces photo) */
-.card-emoji-bar{background:linear-gradient(135deg,var(--light),var(--tag));padding:16px 16px 12px;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden}
-.card-emoji{font-size:1.8rem;line-height:1}
-.card-emoji-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:var(--text);line-height:1.25;flex:1}
+.card-emoji-bar{background:linear-gradient(135deg,var(--light),var(--tag));padding:12px 14px;display:flex;align-items:center;gap:10px}
 .cb2{padding:14px;flex:1;display:flex;flex-direction:column;gap:7px}
+.cn{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;line-height:1.25;color:var(--text)}
+/* selo inline in card body */
+.selo-inline{background:linear-gradient(135deg,#8c5a00,#c88c00);border-radius:8px;color:#fff8e0;font-size:.72rem;font-weight:600;padding:4px 10px;display:inline-flex;align-items:center;gap:5px;align-self:flex-start}
 .ct{display:flex;align-items:flex-start;justify-content:space-between;gap:7px}
 .cn{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;line-height:1.25}
 .tag{background:var(--tag);border-radius:20px;color:var(--accent);font-size:.67rem;font-weight:500;letter-spacing:.04em;padding:3px 9px;white-space:nowrap;flex-shrink:0;text-transform:uppercase}
@@ -1147,14 +1148,15 @@ function render() {
       const card = document.createElement('div');
       card.className = 'card' + (l.selo ? ' tem-selo' : '');
       card.style.animationDelay = (i*.05)+'s';
+      const emoji = getEmoji(l);
       card.innerHTML = `
-        <div class="card-emoji-bar" style="position:relative">
-          <div class="card-emoji">${getEmoji(l)}</div>
-          <div class="card-emoji-name">${l.name}</div>
-          <span class="tag" style="flex-shrink:0">${l.category}</span>
-          ${seloFaixa}
+        <div class="card-emoji-bar">
+          <span style="font-size:1.5rem;line-height:1">${emoji}</span>
+          <span class="tag">${l.category}</span>
         </div>
         <div class="cb2">
+          <h2 class="cn">${l.name}</h2>
+          ${l.selo && SELOS[l.selo] ? `<div class="selo-inline">${SELOS[l.selo]}</div>` : ''}
           ${l.sells ? `<p class="cs">${l.sells}</p>` : ''}
           <p class="ca">${pin()} ${l.address}</p>
           ${l.addedBy ? `<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>` : ''}
