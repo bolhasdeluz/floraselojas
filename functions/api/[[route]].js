@@ -29,7 +29,19 @@ async function getLojas(env) {
 
 async function getCats(env) {
   const raw = await env.LOJAS_KV.get('categorias');
-  return raw ? JSON.parse(raw) : ['Alimentos', 'Artesanato', 'Ervas & Naturais', 'Esotérico', 'Livros & Cultura'];
+  if (!raw) return [
+    {name:'Alimentos', emoji:'🥬'},
+    {name:'Artesanato', emoji:'🏺'},
+    {name:'Ervas & Naturais', emoji:'🌿'},
+    {name:'Esotérico', emoji:'🕯️'},
+    {name:'Livros & Cultura', emoji:'📚'},
+  ];
+  const parsed = JSON.parse(raw);
+  // migrate legacy string array
+  if (parsed.length && typeof parsed[0] === 'string') {
+    return parsed.map(c => ({ name: c, emoji: '🏪' }));
+  }
+  return parsed;
 }
 
 export async function onRequest({ request, env, params }) {
@@ -140,7 +152,10 @@ export async function onRequest({ request, env, params }) {
     if (!isAdmin(request, env)) return json({ error: 'Não autorizado' }, 401);
     const body = await request.json();
     if (!Array.isArray(body)) return json({ error: 'Array esperado' }, 400);
-    const cats = body.map(c => String(c).slice(0, 60)).filter(Boolean);
+    const cats = body.map(c => ({
+      name: String(c.name||c).slice(0, 60),
+      emoji: String(c.emoji||'🏪').slice(0, 4)
+    })).filter(c => c.name);
     await env.LOJAS_KV.put('categorias', JSON.stringify(cats));
     return json(cats);
   }
