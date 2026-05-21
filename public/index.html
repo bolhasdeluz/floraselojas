@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guia de Lojas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff5f7;--card:#fff;--text:#2a1a20;--muted:#8a6070;
+  --accent:#d4607a;--dark:#b8445e;--light:#fde8ed;--tag:#fce8ef;
+  --shadow:0 2px 16px rgba(180,60,90,.08);--shadow-h:0 8px 32px rgba(180,60,90,.16);
+  --r:16px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,#c0405a,#d4607a 60%,#e07a90);padding:20px 28px;position:sticky;top:0;z-index:500;box-shadow:0 2px 20px rgba(180,60,90,.25)}
+.hi{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header h1{font-family:'Playfair Display',serif;font-size:clamp(1.1rem,2.5vw,1.7rem);font-weight:700;color:#fff;letter-spacing:-.02em}
+header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
+.hr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sw{position:relative}
+.sw svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.5);pointer-events:none}
+#search{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.85rem;padding:8px 12px 8px 32px;outline:none;width:185px;transition:all .2s}
+#search::placeholder{color:rgba(255,255,255,.45)}
+#search:focus{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.6)}
+.hbtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);border-radius:10px;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:500;padding:8px 13px;display:flex;align-items:center;gap:6px;transition:background .18s;white-space:nowrap}
+.hbtn:hover{background:rgba(255,255,255,.25)}
+.hbtn.add-loja{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.5);font-weight:600}
+.hbtn.add-loja:hover{background:rgba(255,255,255,.38)}
+.badge-admin{background:rgba(255,255,255,.22);border-radius:20px;color:#fff;font-size:.7rem;padding:2px 7px}
+
+/* ── CONTROLS BAR ── */
+.cb{background:#fff;border-bottom:1px solid #f5e0e5;padding:0 28px;position:sticky;top:68px;z-index:400;box-shadow:0 2px 8px rgba(180,60,90,.06)}
+.ci{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:0}
+.tabs{display:flex}
+.tab{background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500;padding:13px 18px;transition:all .18s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--text)}
+.div{width:1px;height:22px;background:#f0d8de;margin:0 10px;flex-shrink:0}
+.fs{display:flex;gap:7px;overflow-x:auto;padding:9px 0;flex:1;scrollbar-width:none}
+.fs::-webkit-scrollbar{display:none}
+.fb{background:#fdf0f3;border:1.5px solid #f0d0d8;border-radius:20px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.77rem;font-weight:500;padding:5px 12px;transition:all .18s;white-space:nowrap;flex-shrink:0}
+.fb:hover,.fb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── GRID ── */
+#vg{flex:1}
+.gm{max-width:1200px;margin:0 auto;padding:22px 24px 90px}
+#count{color:var(--muted);font-size:.79rem;margin-bottom:16px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:20px}
+
+/* ── CARD ── */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transition:transform .22s,box-shadow .22s;display:flex;flex-direction:column;animation:fu .3s ease both}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow-h)}
+.cp{width:100%;height:170px;object-fit:cover;display:block}
+.cpp{width:100%;height:170px;background:linear-gradient(135deg,var(--light),var(--tag));display:flex;align-items:center;justify-content:center;font-size:2.6rem}
+.cb2{padding:15px;flex:1;display:flex;flex-direction:column;gap:8px}
+.ct{display:flex;align-items:flex-start;justify-content:space-between;gap:7px}
+.cn{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;line-height:1.25}
+.tag{background:var(--tag);border-radius:20px;color:var(--accent);font-size:.67rem;font-weight:500;letter-spacing:.04em;padding:3px 9px;white-space:nowrap;flex-shrink:0;text-transform:uppercase}
+.cs{color:var(--muted);font-size:.82rem;line-height:1.5;flex:1}
+.ca{color:var(--muted);font-size:.77rem;display:flex;gap:4px;align-items:flex-start;line-height:1.4}
+.ca svg{flex-shrink:0;margin-top:1px}
+.added-by{color:#c8a0a8;font-size:.72rem;font-style:italic}
+
+/* ── SELO DA MÃE DE SANTO ── */
+.card.tem-selo{box-shadow:0 2px 16px rgba(180,60,90,.08),0 0 0 2px #e8c86080}
+.card.tem-selo:hover{box-shadow:0 8px 32px rgba(180,60,90,.16),0 0 0 2px #d4a83080}
+.photo-wrap{position:relative;overflow:hidden}
+.selo-faixa{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(135deg,rgba(140,90,0,.88),rgba(200,140,0,.92));
+  backdrop-filter:blur(2px);
+  color:#fff8e0;
+  font-family:'DM Sans',sans-serif;font-size:.74rem;font-weight:600;
+  letter-spacing:.03em;
+  padding:6px 12px;
+  display:flex;align-items:center;gap:6px;
+  text-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+.selo-faixa::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,220,80,.15),transparent);pointer-events:none}
+/* popup selo */
+.pselo{
+  background:linear-gradient(135deg,#8c5a00,#c88c00);
+  border-radius:8px;color:#fff8e0;
+  font-family:'DM Sans',sans-serif;font-size:.73rem;font-weight:600;
+  padding:5px 10px;margin-bottom:8px;
+  display:flex;align-items:center;gap:5px;
+  text-shadow:0 1px 2px rgba(0,0,0,.2);
+}
+/* edit modal selo picker */
+.selo-opts{display:flex;flex-direction:column;gap:7px}
+.selo-opt{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;border:1.5px solid #eee;border-radius:10px;transition:all .18s;background:#fafafa}
+.selo-opt:hover{border-color:var(--accent);background:var(--light)}
+.selo-opt input[type=radio]{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0}
+.selo-opt.selected{border-color:#c88c00;background:#fffbe8}
+.selo-opt span{font-size:.85rem;color:var(--text)}
+.cf{display:flex;gap:7px;margin-top:auto;padding-top:3px}
+.mb{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--light);border:none;border-radius:10px;color:var(--accent);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.79rem;font-weight:500;padding:9px;text-decoration:none;transition:all .18s}
+.mb:hover{background:var(--accent);color:#fff}
+.eb{background:#f5f5f5;border:none;border-radius:10px;color:#bbb;cursor:pointer;padding:9px 11px;transition:all .18s;display:none;align-items:center}
+.eb:hover{background:#ffe4ea;color:var(--accent)}
+.admin-mode .eb{display:flex}
+#empty{display:none;text-align:center;padding:70px 20px;color:var(--muted)}
+#empty svg{margin-bottom:14px;opacity:.3}
+
+/* ── MAPA ── */
+#vm{display:none;flex:1;position:relative}
+#map{width:100%;height:calc(100vh - 128px)}
+.mw{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:#fff3cd;border:1px solid #ffc107;border-radius:10px;color:#7a5c00;font-size:.78rem;padding:7px 14px;z-index:1000;display:none;white-space:nowrap}
+.leaflet-popup-content-wrapper{border-radius:14px!important;box-shadow:0 8px 28px rgba(180,60,90,.2)!important;padding:0!important;overflow:hidden}
+.leaflet-popup-content{margin:0!important;width:235px!important}
+.leaflet-popup-tip{background:#fff!important}
+.pi{padding:13px 15px 11px}
+.ptag{background:var(--tag);border-radius:20px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:.67rem;font-weight:500;letter-spacing:.04em;padding:2px 9px;text-transform:uppercase;display:inline-block;margin-bottom:5px}
+.pn{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.25}
+.ps{color:var(--muted);font-size:.76rem;line-height:1.4;margin-bottom:6px}
+.pad{color:var(--muted);font-size:.73rem;display:flex;gap:4px;align-items:flex-start;margin-bottom:3px;line-height:1.4}
+.pab{color:#c8a0a8;font-size:.7rem;font-style:italic;margin-bottom:9px}
+.pm{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;padding:8px;text-decoration:none;transition:background .18s}
+.pm:hover{background:var(--dark)}
+
+/* ══ MODAIS ══ */
+.ov{position:fixed;inset:0;background:rgba(30,10,18,.55);display:none;align-items:center;justify-content:center;z-index:2000;padding:18px;backdrop-filter:blur(4px)}
+.ov.open{display:flex}
+.mo{background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(180,60,90,.18);width:100%;max-width:480px;max-height:92vh;overflow-y:auto;animation:pi2 .23s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pi2{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.mh{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.mh h2{font-family:'Playfair Display',serif;font-size:1.2rem}
+.mc{background:var(--tag);border:none;border-radius:50%;color:var(--muted);cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:background .18s}
+.mc:hover{background:var(--light);color:var(--accent)}
+.mb2{padding:16px 20px 20px;display:flex;flex-direction:column;gap:13px}
+.f{display:flex;flex-direction:column;gap:5px}
+.f label{font-size:.73rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.f input,.f textarea,.f select{background:#fafafa;border:1.5px solid #eee;border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.87rem;padding:9px 12px;outline:none;transition:border-color .18s;width:100%}
+.f input:focus,.f textarea:focus,.f select:focus{border-color:var(--accent);background:#fff}
+.f textarea{resize:vertical;min-height:70px}
+.fh{font-size:.72rem;color:#bbb}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.ma{display:flex;gap:8px}
+.bp{flex:1;background:var(--accent);border:none;border-radius:10px;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500;padding:11px;transition:background .18s}
+.bp:hover{background:var(--dark)}
+.bs{background:#f5f5f5;border:none;border-radius:10px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.87rem;padding:11px 14px;transition:background .18s}
+.bs:hover{background:#eee}
+.bd{background:#fff0f0;border:none;border-radius:10px;color:#e05555;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.87rem;padding:11px 13px;transition:background .18s}
+.bd:hover{background:#ffd8d8}
+
+/* pin auth */
+.pw{display:flex;flex-direction:column;align-items:center;gap:16px;padding:6px 0}
+.pw p{color:var(--muted);font-size:.87rem;text-align:center}
+#pin-input{background:#fafafa;border:2px solid #eee;border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:1.1rem;letter-spacing:.2em;outline:none;padding:11px 14px;text-align:center;width:100%;transition:border-color .18s}
+#pin-input:focus{border-color:var(--accent)}
+#pin-error{color:#e05555;font-size:.79rem;display:none}
+
+/* geocode */
+.gs{font-size:.73rem;padding:4px 10px;border-radius:8px;display:none}
+.gs.load{background:#fff3cd;color:#7a5c00;display:block}
+.gs.ok{background:#d4edda;color:#1a5c2a;display:block}
+.gs.err{background:#f8d7da;color:#7a1a22;display:block}
+
+/* export */
+#export-code{background:#1a1a2e;border:none;border-radius:10px;color:#f8c8d4;font-family:monospace;font-size:.75rem;line-height:1.6;max-height:180px;overflow-y:auto;padding:12px;width:100%;resize:none}
+
+/* success toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a2e;border-radius:12px;color:#fff;font-size:.85rem;font-weight:500;padding:12px 22px;z-index:3000;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── ADMIN BAR ── */
+#admin-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#c0405a,#d4607a);padding:10px 20px;align-items:center;justify-content:center;gap:9px;z-index:600;box-shadow:0 -4px 18px rgba(180,60,90,.25);flex-wrap:wrap}
+
+/* cats editor */
+.cat-item{display:flex;align-items:center;gap:8px;background:#fdf5f7;border:1.5px solid #f0d0d8;border-radius:10px;padding:8px 12px}
+.cat-item span{flex:1;font-size:.88rem}
+.cat-del{background:none;border:none;color:#e0a0a0;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;transition:color .18s}
+.cat-del:hover{color:#e05555}
+
+@media(max-width:600px){
+  #search{width:135px}
+  #grid{grid-template-columns:1fr}
+  .r2{grid-template-columns:1fr}
+  #map{height:calc(100vh - 155px)}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="hi">
+    <div>
+      <h1>Guia de Lojas</h1>
+      <p id="subtitle">Referências e endereços da comunidade</p>
+    </div>
+    <div class="hr">
+      <div class="sw">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search" placeholder="Buscar…" />
+      </div>
+      <button class="hbtn add-loja" onclick="abrirSubmissao()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Indicar loja
+      </button>
+      <button class="hbtn" id="btn-admin">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M2 21a10 10 0 0 1 20 0"/></svg>
+        Admin
+        <span class="badge-admin" id="admin-badge" style="display:none">✓</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- CONTROLES -->
+<div class="cb">
+  <div class="ci">
+    <div class="tabs">
+      <button class="tab active" id="tab-grid" onclick="setView('grid')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Cards
+      </button>
+      <button class="tab" id="tab-map" onclick="setView('map')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Mapa
+      </button>
+    </div>
+    <div class="div"></div>
+    <div class="fs" id="filter-btns"></div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div id="vg">
+  <div class="gm">
+    <p id="count"></p>
+    <div id="grid"></div>
+    <div id="empty">
+      <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <p>Nenhuma loja encontrada.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MAPA -->
+<div id="vm">
+  <div id="map"></div>
+  <div class="mw" id="map-warn">⚠️ Algumas lojas não têm coordenadas — admin pode editá-las.</div>
+</div>
+
+<!-- ADMIN BAR -->
+<div id="admin-bar">
+  <button class="hbtn" onclick="abrirCats()">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+    Gerenciar categorias
+  </button>
+  <button class="hbtn" onclick="sairAdmin()" style="background:rgba(0,0,0,.15)">Sair do admin</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════ MODAL: INDICAR LOJA (público) ════ -->
+<div class="ov" id="ov-sub">
+  <div class="mo">
+    <div class="mh">
+      <h2>Indicar uma loja</h2>
+      <button class="mc" onclick="fechar('ov-sub')">×</button>
+    </div>
+    <div class="mb2">
+      <div class="f">
+        <label>Seu nome (quem está indicando) *</label>
+        <input type="text" id="s-addedBy" placeholder="Ex: Maria, Fernanda…" />
+      </div>
+      <div class="f">
+        <label>Nome da loja *</label>
+        <input type="text" id="s-name" placeholder="Ex: Empório das Ervas" />
+      </div>
+      <div class="r2">
+        <div class="f">
+          <label>Categoria *</label>
+          <select id="s-category"></select>
+        </div>
+        <div class="f">
+          <label>Emoji (ícone)</label>
+          <input type="text" id="s-emoji" placeholder="🏪" maxlength="4" />
+        </div>
+      </div>
+      <div class="f">
+        <label>O que vende *</label>
+        <textarea id="s-sells" placeholder="Descreva brevemente os produtos…"></textarea>
+      </div>
+      <div class="f">
+        <label>Endereço completo *</label>
+        <input type="text" id="s-address" placeholder="Rua X, 123 — Bairro, Cidade" />
+        <span class="fh">Coloque a cidade no final para o mapa funcionar</span>
+      </div>
+      <div class="f">
+        <label>Localizar no mapa</label>
+        <button class="bs" onclick="geocodificar('s')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas automaticamente</button>
+        <span class="gs" id="gs-s"></span>
+      </div>
+      <div class="r2">
+        <div class="f"><label>Latitude</label><input type="number" id="s-lat" placeholder="-30.0346" step="any" /></div>
+        <div class="f"><label>Longitude</label><input type="number" id="s-lng" placeholder="-51.2177" step="any" /></div>
+      </div>
+      <div class="f">
+        <label>Link do Google Maps *</label>
+        <input type="url" id="s-maps" placeholder="https://maps.google.com/?q=…" />
+        <span class="fh">No Google Maps → Compartilhar → copie o link</span>
+      </div>
+      <div class="f">
+        <label>Foto (URL da imagem)</label>
+        <input type="url" id="s-photo" placeholder="https://… (opcional)" />
+      </div>
+      <div class="ma">
+        <button class="bs" onclick="fechar('ov-sub')">Cancelar</button>
+        <button class="bp" id="btn-sub" onclick="submeterLoja()">Enviar indicação 🌸</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: SENHA ADMIN ════ -->
+<div class="ov" id="ov-senha">
+  <div class="mo" style="max-width:330px">
+    <div class="mh">
+      <h2>Área Admin</h2>
+      <button class="mc" onclick="fechar('ov-senha')">×</button>
+    </div>
+    <div class="mb2">
+      <div class="pw">
+        <svg width="36" height="36" fill="none" stroke="var(--accent)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <p>Digite a senha de administrador</p>
+        <input type="password" id="pin-input" placeholder="••••••" autocomplete="current-password" />
+        <span id="pin-error">Senha incorreta.</span>
+      </div>
+      <div class="ma"><button class="bp" onclick="verificarSenha()">Entrar</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: EDITAR LOJA (admin) ════ -->
+<div class="ov" id="ov-edit">
+  <div class="mo">
+    <div class="mh">
+      <h2>Editar Loja</h2>
+      <button class="mc" onclick="fechar('ov-edit')">×</button>
+    </div>
+    <div class="mb2">
+      <input type="hidden" id="e-id" />
+      <div class="f"><label>Nome *</label><input type="text" id="e-name" /></div>
+      <div class="r2">
+        <div class="f">
+          <label>Categoria *</label>
+          <select id="e-category"></select>
+        </div>
+        <div class="f"><label>Emoji</label><input type="text" id="e-emoji" maxlength="4" /></div>
+      </div>
+      <div class="f"><label>O que vende *</label><textarea id="e-sells"></textarea></div>
+      <div class="f"><label>Endereço *</label><input type="text" id="e-address" /></div>
+      <div class="f">
+        <label>Localizar no mapa</label>
+        <button class="bs" onclick="geocodificar('e')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas</button>
+        <span class="gs" id="gs-e"></span>
+      </div>
+      <div class="r2">
+        <div class="f"><label>Latitude</label><input type="number" id="e-lat" step="any" /></div>
+        <div class="f"><label>Longitude</label><input type="number" id="e-lng" step="any" /></div>
+      </div>
+      <div class="f"><label>Link do Google Maps *</label><input type="url" id="e-maps" /></div>
+      <div class="f"><label>Foto (URL)</label><input type="url" id="e-photo" /></div>
+      <div class="f"><label>Adicionado por</label><input type="text" id="e-addedBy" /></div>
+      <div class="f">
+        <label>Selo da Mãe de Santo</label>
+        <div class="selo-opts" id="selo-opts">
+          <label class="selo-opt"><input type="radio" name="e-selo" value="" checked /><span>Sem selo</span></label>
+          <label class="selo-opt"><input type="radio" name="e-selo" value="indicacao" /><span>✨ Indicação da Mãe de Santo</span></label>
+          <label class="selo-opt"><input type="radio" name="e-selo" value="aprova" /><span>🕯️ Mãe de Santo Aprova</span></label>
+          <label class="selo-opt"><input type="radio" name="e-selo" value="conhece" /><span>🌿 Mãe de Santo Conhece</span></label>
+        </div>
+      </div>
+      <div class="ma" id="edit-actions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: CATEGORIAS (admin) ════ -->
+<div class="ov" id="ov-cats">
+  <div class="mo" style="max-width:400px">
+    <div class="mh">
+      <h2>Gerenciar Categorias</h2>
+      <button class="mc" onclick="fechar('ov-cats')">×</button>
+    </div>
+    <div class="mb2">
+      <p style="color:var(--muted);font-size:.83rem;line-height:1.5">Estas são as categorias disponíveis quando alguém indica uma loja. Você pode adicionar ou remover.</p>
+      <div id="cats-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="new-cat" placeholder="Nova categoria…" style="background:#fafafa;border:1.5px solid #eee;border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.87rem;padding:9px 12px;outline:none;flex:1;transition:border-color .18s" />
+        <button class="bp" style="flex:0 0 auto;padding:9px 16px" onclick="adicionarCat()">Adicionar</button>
+      </div>
+      <div class="ma">
+        <button class="bs" onclick="fechar('ov-cats')">Cancelar</button>
+        <button class="bp" onclick="salvarCats()">Salvar categorias</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let adminToken = null;
+let lojas = [];
+let cats = [];
+let currentView = 'grid';
+let activeCategory = 'Todas';
+let map = null, markers = [];
+let editCats = [];
+
+const SELOS = {
+  'indicacao': '✨ Indicação da Mãe de Santo',
+  'aprova':    '🕯️ Mãe de Santo Aprova',
+  'conhece':   '🌿 Mãe de Santo Conhece',
+};
+
+// highlight selected selo-opt
+document.querySelectorAll('.selo-opt input').forEach(r => {
+  r.addEventListener('change', () => {
+    document.querySelectorAll('.selo-opt').forEach(o => o.classList.remove('selected'));
+    if (r.checked) r.closest('.selo-opt').classList.add('selected');
+  });
+});
+
+// ══ TOAST ══
+function toast(msg, dur=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ══ API ══
+async function apiFetch(path, opts={}) {
+  const headers = { 'Content-Type': 'application/json', ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}) };
+  const res = await fetch(API + path, { ...opts, headers: { ...headers, ...opts.headers } });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function carregarTudo() {
+  try {
+    [lojas, cats] = await Promise.all([apiFetch('/lojas'), apiFetch('/categorias')]);
+  } catch { lojas = []; cats = []; }
+  buildFilters(); render();
+  if (currentView === 'map') renderMapMarkers();
+}
+
+// ══ AUTH ══
+document.getElementById('btn-admin').addEventListener('click', () => {
+  if (adminToken) { sairAdmin(); return; }
+  abrir('ov-senha');
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+});
+document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key==='Enter') verificarSenha(); });
+
+async function verificarSenha() {
+  const v = document.getElementById('pin-input').value;
+  // Testa a senha fazendo uma chamada admin
+  try {
+    adminToken = v;
+    await apiFetch('/categorias', { method: 'PUT', body: JSON.stringify(cats) });
+    fechar('ov-senha');
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-error').style.display = 'none';
+    ativarAdmin();
+  } catch {
+    adminToken = null;
+    document.getElementById('pin-error').style.display = 'block';
+    document.getElementById('pin-input').select();
+  }
+}
+
+function ativarAdmin() {
+  document.body.classList.add('admin-mode');
+  document.getElementById('admin-badge').style.display = '';
+  document.getElementById('admin-bar').style.display = 'flex';
+  document.getElementById('subtitle').textContent = '✏️ Modo edição ativo';
+}
+
+function sairAdmin() {
+  adminToken = null;
+  document.body.classList.remove('admin-mode');
+  document.getElementById('admin-badge').style.display = 'none';
+  document.getElementById('admin-bar').style.display = 'none';
+  document.getElementById('subtitle').textContent = 'Referências e endereços da comunidade';
+}
+
+// ══ MODAIS ══
+function abrir(id) { document.getElementById(id).classList.add('open'); }
+function fechar(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target===o) fechar(o.id); }));
+
+// ══ SUBMISSÃO PÚBLICA ══
+function abrirSubmissao() {
+  preencherSelectCats('s-category');
+  ['name','addedBy','sells','address','maps','photo','emoji'].forEach(f => document.getElementById('s-'+f).value='');
+  document.getElementById('s-lat').value=''; document.getElementById('s-lng').value='';
+  document.getElementById('gs-s').className='gs';
+  abrir('ov-sub');
+}
+
+async function submeterLoja() {
+  const g = id => document.getElementById('s-'+id).value.trim();
+  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), photo:g('photo'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', lat:parseFloat(document.getElementById('s-lat').value)||null, lng:parseFloat(document.getElementById('s-lng').value)||null };
+  if (!body.name||!body.category||!body.sells||!body.address||!body.maps||!body.addedBy) { alert('Preencha todos os campos obrigatórios (*)'); return; }
+  const btn = document.getElementById('btn-sub');
+  btn.textContent = 'Enviando…'; btn.disabled = true;
+  try {
+    const nova = await apiFetch('/lojas', { method:'POST', body:JSON.stringify(body) });
+    lojas.push(nova);
+    fechar('ov-sub');
+    buildFilters(); render();
+    if (currentView==='map') renderMapMarkers();
+    toast('🌸 Loja adicionada com sucesso! Obrigada pela indicação.');
+  } catch { toast('❌ Erro ao enviar. Tente novamente.'); }
+  btn.textContent = 'Enviar indicação 🌸'; btn.disabled = false;
+}
+
+// ══ EDITAR LOJA (admin) ══
+function abrirEditar(id) {
+  const l = lojas.find(x=>x.id===id); if(!l) return;
+  document.getElementById('e-id').value = l.id;
+  document.getElementById('e-name').value = l.name;
+  document.getElementById('e-sells').value = l.sells;
+  document.getElementById('e-address').value = l.address;
+  document.getElementById('e-maps').value = l.maps;
+  document.getElementById('e-photo').value = l.photo||'';
+  document.getElementById('e-emoji').value = l.emoji||'';
+  document.getElementById('e-lat').value = l.lat||'';
+  document.getElementById('e-lng').value = l.lng||'';
+  document.getElementById('e-addedBy').value = l.addedBy||'';
+  // selo
+  document.querySelectorAll('[name="e-selo"]').forEach(r => {
+    r.checked = r.value === (l.selo||'');
+    r.closest('.selo-opt').classList.toggle('selected', r.checked && r.value !== '');
+  });
+  document.getElementById('gs-e').className='gs';
+  preencherSelectCats('e-category', l.category);
+  document.getElementById('edit-actions').innerHTML = `<button class="bd" onclick="excluirLoja(${id})">🗑 Excluir</button><button class="bs" onclick="fechar('ov-edit')">Cancelar</button><button class="bp" onclick="salvarEdicao()">Salvar</button>`;
+  abrir('ov-edit');
+}
+
+async function salvarEdicao() {
+  const id = parseInt(document.getElementById('e-id').value);
+  const g = x => document.getElementById('e-'+x).value.trim();
+  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), photo:g('photo'), emoji:g('emoji')||'🏪', addedBy:g('addedBy'),
+    lat:parseFloat(document.getElementById('e-lat').value)||null,
+    lng:parseFloat(document.getElementById('e-lng').value)||null,
+    selo: document.querySelector('[name="e-selo"]:checked')?.value || '' };
+  try {
+    const updated = await apiFetch(`/loja/${id}`, { method:'PUT', body:JSON.stringify(body) });
+    const i = lojas.findIndex(x=>x.id===id); lojas[i]=updated;
+    fechar('ov-edit'); buildFilters(); render();
+    if (currentView==='map') renderMapMarkers();
+    toast('✅ Loja atualizada!');
+  } catch { toast('❌ Erro ao salvar.'); }
+}
+
+async function excluirLoja(id) {
+  if (!confirm('Excluir esta loja?')) return;
+  try {
+    await apiFetch(`/loja/${id}`, { method:'DELETE' });
+    lojas = lojas.filter(x=>x.id!==id);
+    fechar('ov-edit'); buildFilters(); render();
+    if (currentView==='map') renderMapMarkers();
+    toast('🗑 Loja removida.');
+  } catch { toast('❌ Erro ao excluir.'); }
+}
+
+// ══ CATEGORIAS (admin) ══
+function abrirCats() {
+  editCats = [...cats];
+  renderCatsList();
+  abrir('ov-cats');
+}
+
+function renderCatsList() {
+  const el = document.getElementById('cats-list'); el.innerHTML='';
+  editCats.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className='cat-item';
+    div.innerHTML = `<span>${c}</span><button class="cat-del" onclick="removeCat(${i})" title="Remover">×</button>`;
+    el.appendChild(div);
+  });
+}
+
+function removeCat(i) { editCats.splice(i,1); renderCatsList(); }
+
+function adicionarCat() {
+  const v = document.getElementById('new-cat').value.trim();
+  if (!v || editCats.includes(v)) return;
+  editCats.push(v); document.getElementById('new-cat').value='';
+  renderCatsList();
+}
+
+document.getElementById('new-cat').addEventListener('keydown', e => { if(e.key==='Enter') adicionarCat(); });
+
+async function salvarCats() {
+  try {
+    cats = await apiFetch('/categorias', { method:'PUT', body:JSON.stringify(editCats) });
+    fechar('ov-cats'); buildFilters(); toast('✅ Categorias salvas!');
+  } catch { toast('❌ Erro ao salvar categorias.'); }
+}
+
+function preencherSelectCats(selectId, selected='') {
+  const sel = document.getElementById(selectId); sel.innerHTML='';
+  cats.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===selected) o.selected=true; sel.appendChild(o); });
+}
+
+// ══ GEOCODE ══
+async function geocodificar(pfx) {
+  const addr = document.getElementById(pfx+'-address').value.trim();
+  if (!addr) { alert('Preencha o endereço primeiro.'); return; }
+  const st = document.getElementById('gs-'+pfx);
+  st.className='gs load'; st.textContent='🔍 Buscando coordenadas…';
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr)}`, { headers:{'Accept-Language':'pt-BR'} });
+    const data = await res.json();
+    if (!data.length) throw new Error();
+    document.getElementById(pfx+'-lat').value = parseFloat(data[0].lat).toFixed(6);
+    document.getElementById(pfx+'-lng').value = parseFloat(data[0].lon).toFixed(6);
+    st.className='gs ok'; st.textContent='✅ ' + data[0].display_name.split(',').slice(0,3).join(',');
+  } catch {
+    st.className='gs err'; st.textContent='❌ Não encontrado. Adicione a cidade no endereço.';
+  }
+}
+
+// ══ MAPA ══
+function setView(v) {
+  currentView=v;
+  document.getElementById('vg').style.display = v==='grid'?'block':'none';
+  document.getElementById('vm').style.display  = v==='map' ?'block':'none';
+  document.getElementById('tab-grid').classList.toggle('active',v==='grid');
+  document.getElementById('tab-map').classList.toggle('active',v==='map');
+  if (v==='map') initMap();
+}
+
+function criarIcone(emoji) {
+  return L.divIcon({
+    className:'',
+    html:`<div style="background:linear-gradient(135deg,#c0405a,#d4607a);border:3px solid #fff;border-radius:50% 50% 50% 0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(180,60,90,.4);transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${emoji||'🏪'}</span></div>`,
+    iconSize:[36,36], iconAnchor:[18,36], popupAnchor:[0,-38]
+  });
+}
+
+function filtrados() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  return lojas.filter(l => {
+    const cOk = activeCategory==='Todas' || l.category===activeCategory;
+    const qOk = !q || l.name.toLowerCase().includes(q) || l.sells.toLowerCase().includes(q) || l.category.toLowerCase().includes(q);
+    return cOk && qOk;
+  });
+}
+
+function initMap() {
+  if (!map) {
+    map = L.map('map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap', maxZoom:19 }).addTo(map);
+  }
+  renderMapMarkers();
+}
+
+function renderMapMarkers() {
+  if (!map) return;
+  markers.forEach(m=>m.remove()); markers=[];
+  const lista = filtrados().filter(l=>l.lat&&l.lng);
+  const sem = filtrados().filter(l=>!l.lat||!l.lng);
+  document.getElementById('map-warn').style.display = sem.length?'block':'none';
+  if (!lista.length) return;
+  const bounds=[];
+  lista.forEach(l=>{
+    const m = L.marker([l.lat,l.lng],{icon:criarIcone(l.emoji)}).addTo(map).bindPopup(`
+      <div class="pi">
+        <span class="ptag">${l.category}</span>
+        <div class="pn">${l.name}</div>
+        <div class="ps">${l.sells}</div>
+        <div class="pad"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.address}</div>
+        ${l.addedBy?`<div class="pab">Indicado por ${l.addedBy} ${l.addedAt?'· '+l.addedAt:''}</div>`:''}
+        ${l.selo && SELOS[l.selo] ? `<div class="pselo">${SELOS[l.selo]}</div>` : ''}
+        <a class="pm" href="${l.maps}" target="_blank" rel="noopener"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Abrir no Google Maps</a>
+      </div>`, {maxWidth:260});
+    markers.push(m); bounds.push([l.lat,l.lng]);
+  });
+  if (bounds.length===1) map.setView(bounds[0],15);
+  else map.fitBounds(bounds,{padding:[40,40]});
+}
+
+// ══ GRID ══
+function buildFilters() {
+  const wrap=document.getElementById('filter-btns'); wrap.innerHTML='';
+  const cs=['Todas',...new Set(lojas.map(l=>l.category))];
+  cs.forEach(cat=>{
+    const btn=document.createElement('button');
+    btn.className='fb'+(cat===activeCategory?' active':'');
+    btn.textContent=cat;
+    btn.addEventListener('click',()=>{ activeCategory=cat; document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); if(currentView==='map') renderMapMarkers(); });
+    wrap.appendChild(btn);
+  });
+}
+
+const pin=(c='currentColor')=>`<svg width="12" height="12" fill="none" stroke="${c}" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+
+function render() {
+  const lista=filtrados();
+  const grid=document.getElementById('grid'); grid.innerHTML='';
+  document.getElementById('count').textContent=lista.length+(lista.length===1?' loja':' lojas');
+  document.getElementById('empty').style.display=lista.length?'none':'block';
+  lista.forEach((l,i)=>{
+    const card=document.createElement('div');
+    card.className='card'+(l.selo?` tem-selo`:''); card.style.animationDelay=(i*.05)+'s';
+    const seloFaixa = l.selo && SELOS[l.selo] ? `<div class="selo-faixa">${SELOS[l.selo]}</div>` : '';
+    const ph=l.photo?`<div class="photo-wrap"><img class="cp" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'cpp\\'>${l.emoji||'🏪'}</div>'">${seloFaixa}</div>` :`<div class="photo-wrap"><div class="cpp">${l.emoji||'🏪'}</div>${seloFaixa}</div>`;
+    card.innerHTML=`${ph}
+      <div class="cb2">
+        <div class="ct"><h2 class="cn">${l.name}</h2><span class="tag">${l.category}</span></div>
+        <p class="cs">${l.sells}</p>
+        <p class="ca">${pin()} ${l.address}</p>
+        ${l.addedBy?`<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>`:''}
+        <div class="cf">
+          <a class="mb" href="${l.maps}" target="_blank" rel="noopener">${pin('#fff')} Ver no mapa</a>
+          <button class="eb" onclick="abrirEditar(${l.id})" title="Editar">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ══ INIT ══
+carregarTudo();
+document.getElementById('search').addEventListener('input',()=>{ render(); if(currentView==='map') renderMapMarkers(); });
+</script>
+</body>
+</html>

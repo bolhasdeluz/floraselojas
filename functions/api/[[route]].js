@@ -1,0 +1,115 @@
+// ════════════════════════════════════════
+// API do Guia de Lojas — Cloudflare Pages Functions
+// KV binding: LOJAS_KV
+// Env var:    ADMIN_PASS
+// ════════════════════════════════════════
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+};
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS },
+  });
+}
+
+function isAdmin(request, env) {
+  const auth = request.headers.get('Authorization') || '';
+  return auth === `Bearer ${env.ADMIN_PASS}`;
+}
+
+async function getLojas(env) {
+  const raw = await env.LOJAS_KV.get('lojas');
+  return raw ? JSON.parse(raw) : [];
+}
+
+async function getCats(env) {
+  const raw = await env.LOJAS_KV.get('categorias');
+  return raw ? JSON.parse(raw) : ['Alimentos', 'Artesanato', 'Ervas & Naturais', 'Esotérico', 'Livros & Cultura'];
+}
+
+export async function onRequest({ request, env, params }) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS });
+  }
+
+  const url = new URL(request.url);
+  const path = '/' + (params.route ? params.route.join('/') : '');
+
+  // ── GET /api/lojas ──────────────────────
+  if (path === '/lojas' && request.method === 'GET') {
+    const lojas = await getLojas(env);
+    return json(lojas);
+  }
+
+  // ── POST /api/lojas (qualquer pessoa) ──
+  if (path === '/lojas' && request.method === 'POST') {
+    const body = await request.json();
+    const { name, category, sells, address, maps, photo, emoji, lat, lng, addedBy } = body;
+    if (!name || !category || !sells || !address || !maps) {
+      return json({ error: 'Campos obrigatórios faltando' }, 400);
+    }
+    const lojas = await getLojas(env);
+    const nova = {
+      id: Date.now(),
+      name: String(name).slice(0, 120),
+      category: String(category).slice(0, 60),
+      sells: String(sells).slice(0, 400),
+      address: String(address).slice(0, 200),
+      maps: String(maps).slice(0, 500),
+      photo: String(photo || '').slice(0, 500),
+      emoji: String(emoji || '🏪').slice(0, 4),
+      lat: parseFloat(lat) || null,
+      lng: parseFloat(lng) || null,
+      addedBy: String(addedBy || 'Anônimo').slice(0, 80),
+      addedAt: new Date().toLocaleDateString('pt-BR'),
+    };
+    lojas.push(nova);
+    await env.LOJAS_KV.put('lojas', JSON.stringify(lojas));
+    return json(nova, 201);
+  }
+
+  // ── PUT /api/loja/:id (admin) ──────────
+  if (path.startsWith('/loja/') && request.method === 'PUT') {
+    if (!isAdmin(request, env)) return json({ error: 'Não autorizado' }, 401);
+    const id = parseInt(path.split('/')[2]);
+    const body = await request.json();
+    const lojas = await getLojas(env);
+    const i = lojas.findIndex(l => l.id === id);
+    if (i === -1) return json({ error: 'Não encontrado' }, 404);
+    lojas[i] = { ...lojas[i], ...body, id };
+    await env.LOJAS_KV.put('lojas', JSON.stringify(lojas));
+    return json(lojas[i]);
+  }
+
+  // ── DELETE /api/loja/:id (admin) ───────
+  if (path.startsWith('/loja/') && request.method === 'DELETE') {
+    if (!isAdmin(request, env)) return json({ error: 'Não autorizado' }, 401);
+    const id = parseInt(path.split('/')[2]);
+    let lojas = await getLojas(env);
+    lojas = lojas.filter(l => l.id !== id);
+    await env.LOJAS_KV.put('lojas', JSON.stringify(lojas));
+    return json({ ok: true });
+  }
+
+  // ── GET /api/categorias ────────────────
+  if (path === '/categorias' && request.method === 'GET') {
+    return json(await getCats(env));
+  }
+
+  // ── PUT /api/categorias (admin) ────────
+  if (path === '/categorias' && request.method === 'PUT') {
+    if (!isAdmin(request, env)) return json({ error: 'Não autorizado' }, 401);
+    const body = await request.json();
+    if (!Array.isArray(body)) return json({ error: 'Array esperado' }, 400);
+    const cats = body.map(c => String(c).slice(0, 60)).filter(Boolean);
+    await env.LOJAS_KV.put('categorias', JSON.stringify(cats));
+    return json(cats);
+  }
+
+  return json({ error: 'Rota não encontrada' }, 404);
+}
