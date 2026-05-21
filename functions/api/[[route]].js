@@ -113,6 +113,23 @@ export async function onRequest({ request, env, params }) {
     }
   }
 
+  // ── GET /api/qualidades ───────────────
+  if (path === '/qualidades' && request.method === 'GET') {
+    const raw = await env.LOJAS_KV.get('qualidades');
+    const quals = raw ? JSON.parse(raw) : ['Bons preços','Perto do terreiro','Diversidade de materiais','Imagens Bahia','Atendimento especial','Preço justo','Variedade de ervas'];
+    return json(quals);
+  }
+
+  // ── PUT /api/qualidades (admin) ────────
+  if (path === '/qualidades' && request.method === 'PUT') {
+    if (!isAdmin(request, env)) return json({ error: 'Não autorizado' }, 401);
+    const body = await request.json();
+    if (!Array.isArray(body)) return json({ error: 'Array esperado' }, 400);
+    const quals = body.map(c => String(c).slice(0, 80)).filter(Boolean);
+    await env.LOJAS_KV.put('qualidades', JSON.stringify(quals));
+    return json(quals);
+  }
+
   // ── GET /api/categorias ────────────────
   if (path === '/categorias' && request.method === 'GET') {
     return json(await getCats(env));
