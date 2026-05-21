@@ -50,8 +50,8 @@ export async function onRequest({ request, env, params }) {
   if (path === '/lojas' && request.method === 'POST') {
     const body = await request.json();
     const { name, category, sells, address, maps, photo, emoji, lat, lng, addedBy } = body;
-    if (!name || !category || !sells || !address || !maps) {
-      return json({ error: 'Campos obrigatórios faltando' }, 400);
+    if (!name || !category || !address) {
+      return json({ error: 'Nome, categoria e endereço são obrigatórios' }, 400);
     }
     const lojas = await getLojas(env);
     const nova = {
@@ -94,6 +94,23 @@ export async function onRequest({ request, env, params }) {
     lojas = lojas.filter(l => l.id !== id);
     await env.LOJAS_KV.put('lojas', JSON.stringify(lojas));
     return json({ ok: true });
+  }
+
+  // ── GET /api/resolve-url?u=... ────────
+  // Resolve short Google Maps URLs (share.google, goo.gl, maps.app.goo.gl)
+  // server-side to extract the final URL with coords and address
+  if (path === '/resolve-url' && request.method === 'GET') {
+    const shortUrl = url.searchParams.get('u');
+    if (!shortUrl) return json({ error: 'Parâmetro u obrigatório' }, 400);
+    try {
+      const res = await fetch(shortUrl, {
+        redirect: 'follow',
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      return json({ finalUrl: res.url });
+    } catch (e) {
+      return json({ error: 'Não foi possível resolver o link', detail: e.message }, 502);
+    }
   }
 
   // ── GET /api/categorias ────────────────
