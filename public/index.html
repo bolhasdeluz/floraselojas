@@ -268,7 +268,7 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
     </div>
     <div class="mb2">
       <div class="f">
-        <label>Seu nome (quem está indicando) *</label>
+        <label>Seu nome (quem está indicando)</label>
         <input type="text" id="s-addedBy" placeholder="Ex: Maria, Fernanda…" />
       </div>
       <div class="f">
@@ -286,11 +286,11 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         </div>
       </div>
       <div class="f">
-        <label>O que vende *</label>
+        <label>O que vende</label>
         <textarea id="s-sells" placeholder="Descreva brevemente os produtos…"></textarea>
       </div>
       <div class="f">
-        <label>Link do Google Maps *</label>
+        <label>Link do Google Maps</label>
         <input type="url" id="s-maps" placeholder="https://maps.google.com/?q=…"
           oninput="extrairDoMaps(this.value,'s')" />
         <span class="fh">Cole o link — endereço e coordenadas serão preenchidos automaticamente</span>
@@ -349,7 +349,7 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
     </div>
     <div class="mb2">
       <input type="hidden" id="e-id" />
-      <div class="f"><label>Nome *</label><input type="text" id="e-name" /></div>
+      <div class="f"><label>Nome</label><input type="text" id="e-name" /></div>
       <div class="r2">
         <div class="f">
           <label>Categoria *</label>
@@ -357,13 +357,13 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         </div>
         <div class="f"><label>Emoji</label><input type="text" id="e-emoji" maxlength="4" /></div>
       </div>
-      <div class="f"><label>O que vende *</label><textarea id="e-sells"></textarea></div>
+      <div class="f"><label>O que vende</label><textarea id="e-sells"></textarea></div>
       <div class="f">
-        <label>Link do Google Maps *</label>
+        <label>Link do Google Maps</label>
         <input type="url" id="e-maps" oninput="extrairDoMaps(this.value,'e')" />
         <span class="fh">Cole o link — endereço e coordenadas extraídos automaticamente</span>
       </div>
-      <div class="f"><label>Endereço *</label><input type="text" id="e-address" /></div>
+      <div class="f"><label>Endereço</label><input type="text" id="e-address" /></div>
       <div class="f">
         <label>Coordenadas (para o mapa)</label>
         <button class="bs" onclick="geocodificar('e')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas pelo endereço</button>
@@ -373,7 +373,7 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         <div class="f"><label>Latitude</label><input type="number" id="e-lat" step="any" /></div>
         <div class="f"><label>Longitude</label><input type="number" id="e-lng" step="any" /></div>
       </div>
-      <div class="f"><label>Link do Google Maps *</label><input type="url" id="e-maps" /></div>
+      <div class="f"><label>Link do Google Maps</label><input type="url" id="e-maps" /></div>
       <div class="f"><label>Foto (URL)</label><input type="url" id="e-photo" /></div>
       <div class="f"><label>Adicionado por</label><input type="text" id="e-addedBy" /></div>
       <div class="f">
@@ -516,7 +516,7 @@ function abrirSubmissao() {
 async function submeterLoja() {
   const g = id => document.getElementById('s-'+id).value.trim();
   const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), photo:g('photo'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', lat:parseFloat(document.getElementById('s-lat').value)||null, lng:parseFloat(document.getElementById('s-lng').value)||null };
-  if (!body.name||!body.category||!body.sells||!body.address||!body.maps||!body.addedBy) { alert('Preencha todos os campos obrigatórios (*)'); return; }
+  if (!body.name||!body.category||!body.address) { alert('Preencha nome, categoria e endereço.'); return; }
   const btn = document.getElementById('btn-sub');
   btn.textContent = 'Enviando…'; btn.disabled = true;
   try {
@@ -622,7 +622,38 @@ function preencherSelectCats(selectId, selected='') {
 }
 
 // ══ EXTRAI DADOS DO LINK DO GOOGLE MAPS ══
-function extrairDoMaps(url, pfx) {
+const SHORT_URL_PATTERNS = [
+  /^https?:\/\/share\.google\//,
+  /^https?:\/\/goo\.gl\/maps\//,
+  /^https?:\/\/maps\.app\.goo\.gl\//,
+  /^https?:\/\/g\.co\//,
+];
+
+function ehUrlCurta(url) {
+  return SHORT_URL_PATTERNS.some(p => p.test(url));
+}
+
+async function extrairDoMaps(url, pfx) {
+  if (!url || url.length < 10) return;
+
+  // Se for URL curta, resolve no servidor primeiro
+  if (ehUrlCurta(url)) {
+    const st = document.getElementById('gs-'+pfx);
+    st.className='gs load'; st.textContent='🔗 Resolvendo link curto…';
+    try {
+      const res = await apiFetch('/resolve-url?u=' + encodeURIComponent(url));
+      st.className='gs'; st.textContent='';
+      extrairCamposDoMaps(res.finalUrl, pfx);
+    } catch {
+      st.className='gs err'; st.textContent='❌ Não foi possível resolver o link. Tente o link completo do Google Maps.';
+    }
+    return;
+  }
+
+  extrairCamposDoMaps(url, pfx);
+}
+
+function extrairCamposDoMaps(url, pfx) {
   if (!url) return;
   try {
     const u = new URL(url);
@@ -635,12 +666,11 @@ function extrairDoMaps(url, pfx) {
     }
 
     // 2. Endereço — tenta várias fontes em ordem de prioridade
+    const addrEl = document.getElementById(pfx+'-address');
 
     // 2a. ?q= param (maps.google.com/?q=endereço)
     const q = u.searchParams.get('q');
     if (q && !/^-?\d+\.\d+,-?\d+\.\d+$/.test(q.trim())) {
-      // q não é só coordenadas brutas — é um endereço
-      const addrEl = document.getElementById(pfx+'-address');
       if (!addrEl.value.trim()) addrEl.value = decodeURIComponent(q.replace(/\+/g,' '));
       return;
     }
@@ -648,10 +678,8 @@ function extrairDoMaps(url, pfx) {
     // 2b. /place/NOME/ no path
     const placeMatch = url.match(/\/place\/([^/@]+)/);
     if (placeMatch) {
-      const addrEl = document.getElementById(pfx+'-address');
-      if (!addrEl.value.trim()) {
-        addrEl.value = decodeURIComponent(placeMatch[1].replace(/\+/g,' '));
-      }
+      const nome = decodeURIComponent(placeMatch[1].replace(/\+/g,' '));
+      if (!addrEl.value.trim() && nome) addrEl.value = nome;
     }
   } catch {}
 }
