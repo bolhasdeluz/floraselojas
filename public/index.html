@@ -76,6 +76,8 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
 .ca{color:var(--muted);font-size:.77rem;display:flex;gap:4px;align-items:flex-start;line-height:1.4}
 .ca svg{flex-shrink:0;margin-top:1px}
 .added-by{color:#c8a0a8;font-size:.72rem;font-style:italic}
+.card-hours{color:var(--muted);font-size:.76rem;display:flex;gap:12px;flex-wrap:wrap}
+.card-hours span{display:flex;align-items:center;gap:4px}
 
 /* ── LIST VIEW ── */
 #grid.layout-list{display:flex;flex-direction:column;gap:10px}
@@ -347,6 +349,16 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         <input type="tel" id="s-phone" placeholder="(51) 99999-9999" />
         <span class="fh">Vai virar botão de WhatsApp no card</span>
       </div>
+      <div class="r2">
+        <div class="f">
+          <label>Horário seg–sex</label>
+          <input type="text" id="s-hours_week" placeholder="9h às 18h" />
+        </div>
+        <div class="f">
+          <label>Horário sábado</label>
+          <input type="text" id="s-hours_sat" placeholder="9h às 13h" />
+        </div>
+      </div>
       <div class="f">
         <label>Link do Google Maps</label>
         <input type="url" id="s-maps" placeholder="https://share.google/… ou maps.google.com/…" />
@@ -416,6 +428,10 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
       </div>
       <div class="f"><label>Endereço</label><input type="text" id="e-address" /></div>
       <div class="f"><label>WhatsApp / Telefone</label><input type="tel" id="e-phone" placeholder="(51) 99999-9999" /></div>
+      <div class="r2">
+        <div class="f"><label>Horário seg–sex</label><input type="text" id="e-hours_week" placeholder="9h às 18h" /></div>
+        <div class="f"><label>Horário sábado</label><input type="text" id="e-hours_sat" placeholder="9h às 13h" /></div>
+      </div>
       <div class="f">
         <label>Coordenadas (para o mapa)</label>
         <button class="bs" onclick="geocodificar('e')" type="button" style="width:100%;font-size:.81rem">📍 Buscar coordenadas pelo endereço</button>
@@ -425,7 +441,6 @@ header p{color:rgba(255,255,255,.6);font-size:.76rem;margin-top:2px}
         <div class="f"><label>Latitude</label><input type="number" id="e-lat" step="any" /></div>
         <div class="f"><label>Longitude</label><input type="number" id="e-lng" step="any" /></div>
       </div>
-      <div class="f"><label>Link do Google Maps</label><input type="url" id="e-maps" /></div>
       <div class="f"><label>Foto (URL)</label><input type="url" id="e-photo" /></div>
       <div class="f"><label>Adicionado por</label><input type="text" id="e-addedBy" /></div>
       <div class="f">
@@ -722,7 +737,7 @@ function getCheckedQuals(containerId) {
 // ══ SUBMISSÃO PÚBLICA ══
 function abrirSubmissao() {
   preencherSelectCats('s-category');
-  ['name','addedBy','sells','address','maps','phone'].forEach(f => document.getElementById('s-'+f).value='');
+  ['name','addedBy','sells','address','maps','phone','hours_week','hours_sat'].forEach(f => document.getElementById('s-'+f).value='');
   // auto-fill emoji from first category
   const firstCat = cats[0];
   if (firstCat) document.getElementById('s-emoji').value = firstCat.emoji;
@@ -732,7 +747,7 @@ function abrirSubmissao() {
 
 async function submeterLoja() {
   const g = id => document.getElementById('s-'+id).value.trim();
-  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', phone:g('phone'), quals:getCheckedQuals('s-quals') };
+  const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', phone:g('phone'), quals:getCheckedQuals('s-quals'), hours_week:g('hours_week'), hours_sat:g('hours_sat') };
   if (!body.name||!body.category||!body.address||!body.addedBy) { alert('Preencha nome, categoria, endereço e quem está indicando.'); return; }
   const btn = document.getElementById('btn-sub');
   btn.textContent = 'Enviando…'; btn.disabled = true;
@@ -761,6 +776,8 @@ function abrirEditar(id) {
   document.getElementById('e-lng').value = l.lng||'';
   document.getElementById('e-addedBy').value = l.addedBy||'';
   document.getElementById('e-phone').value = l.phone||'';
+  document.getElementById('e-hours_week').value = l.hours_week||'';
+  document.getElementById('e-hours_sat').value = l.hours_sat||'';
   renderQualChecks('e-quals', l.quals||[]);
   // selo
   document.querySelectorAll('[name="e-selo"]').forEach(r => {
@@ -784,6 +801,8 @@ async function salvarEdicao() {
     lng:parseFloat(document.getElementById('e-lng').value)||null,
     selo: document.querySelector('[name="e-selo"]:checked')?.value || '',
     phone: g('phone'),
+    hours_week: g('hours_week'),
+    hours_sat:  g('hours_sat'),
     quals: getCheckedQuals('e-quals') };
   try {
     const updated = await apiFetch(`/loja/${id}`, { method:'PUT', body:JSON.stringify(body) });
@@ -1207,6 +1226,7 @@ function render() {
           ${l.sells ? `<div class="list-sells">${l.sells}</div>` : ''}
           <div class="list-addr">${pin()} ${l.address}</div>
           ${qualsBadges ? `<div class="list-badges">${qualsBadges}</div>` : ''}
+          ${(l.hours_week||l.hours_sat)?`<div class="card-hours" style="margin-top:1px">${l.hours_week?`<span>🕐 Seg–Sex: ${l.hours_week}</span>`:''} ${l.hours_sat?`<span>Sáb: ${l.hours_sat}</span>`:''}</div>`:''}
           ${l.addedBy ? `<div class="added-by" style="margin-top:1px">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</div>` : ''}
         </div>
         <div class="list-actions">
@@ -1231,6 +1251,10 @@ function render() {
           ${l.sells ? `<p class="cs">${l.sells}</p>` : ''}
           <p class="ca">${pin()} ${l.address}</p>
           ${l.addedBy ? `<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>` : ''}
+          ${(l.hours_week||l.hours_sat) ? `<div class="card-hours">
+            ${l.hours_week?`<span>🕐 Seg–Sex: ${l.hours_week}</span>`:''}
+            ${l.hours_sat?`<span>🕐 Sáb: ${l.hours_sat}</span>`:''}
+          </div>`:''}
           ${qualsBadges ? `<div class="quals-wrap">${qualsBadges}</div>` : ''}
           <div class="cf">
             <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
