@@ -86,6 +86,10 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
 .list-item:last-child{border-radius:0 0 12px 12px;border-bottom:none}
 .list-item:only-child{border-radius:12px}
 .list-item:hover{background:#fff8f9}
+.list-item.destaque{background:linear-gradient(135deg,#fffbe8,#fff8e0);border-left:3px solid #c8a000}
+.list-item.destaque:hover{background:linear-gradient(135deg,#fff8d8,#fff5d0)}
+.list-section-header{font-size:.72rem;font-weight:700;color:#9a7000;letter-spacing:.06em;text-transform:uppercase;padding:10px 14px 4px;display:flex;align-items:center;gap:6px}
+.list-section-divider{height:1px;background:#f0d8de;margin:6px 0}
 .list-emoji{font-size:1.2rem;flex-shrink:0;width:24px;text-align:center}
 .list-main{flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:2px}
 .list-top{display:flex;align-items:center;gap:5px;min-width:0}
@@ -225,10 +229,16 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
 .cat-name-input{flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);padding:0}
 
 @media(max-width:600px){
-  #search{width:135px}
   #grid{grid-template-columns:1fr}
   .r2{grid-template-columns:1fr}
-  #map{height:calc(100vh - 155px)}
+  #map{height:calc(100vh - 120px)}
+  header p{display:none}
+  header{padding:11px 12px}
+  #search{width:100px}
+  .hbtn span:not(.badge-admin){display:none}
+  .hbtn{padding:7px 9px}
+  .hbtn.add-loja span{display:inline}
+  .hbtn.add-loja{padding:7px 11px}
 }
 </style>
 </head>
@@ -1242,26 +1252,24 @@ function render() {
   document.getElementById('count').textContent = lista.length + (lista.length===1?' loja':' lojas');
   document.getElementById('empty').style.display = lista.length ? 'none' : 'block';
 
-  lista.forEach((l, i) => {
-    const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
-    const waLink = waNum ? `https://wa.me/55${waNum}` : '';
-    const seloFaixa = l.selo && SELOS[l.selo] ? `<div class="selo-faixa">${SELOS[l.selo]}</div>` : '';
-    const qualsBadges = l.quals&&l.quals.length ? l.quals.map(q=>`<span class="qual-badge">${q}</span>`).join('') : '';
-    const editBtn = `<button class="eb" onclick="abrirEditar(${l.id})" title="Editar"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
-
-    if (currentLayout === 'list') {
+  // ── LIST MODE ──
+  if (currentLayout === 'list') {
+    const destaques = lista.filter(l => l.selo);
+    const resto = lista.filter(l => !l.selo);
+    const makeListItem = (l, i) => {
       const item = document.createElement('div');
-      item.className = 'list-item';
+      item.className = 'list-item' + (l.selo ? ' destaque' : '');
       item.style.animationDelay = (i*.02)+'s';
       item.style.cursor = 'pointer';
-      const seloIcon = l.selo ? `<span style="color:#c88c00;font-size:.85rem;flex-shrink:0" title="${SELOS[l.selo]||''}">✦</span>` : '';
+      const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
+      const waLink = waNum ? `https://wa.me/55${waNum}` : '';
+      const editBtn = `<button class="eb" onclick="event.stopPropagation();abrirEditar(${l.id})" title="Editar"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
       item.innerHTML = `
         <div class="list-emoji">${getEmoji(l)}</div>
         <div class="list-main">
           <div class="list-top">
             <span class="list-name">${l.name}</span>
             <span class="tag" style="font-size:.62rem;padding:2px 7px;flex-shrink:0">${l.category}</span>
-            ${seloIcon}
           </div>
           <div class="list-addr">${l.address}</div>
         </div>
@@ -1271,36 +1279,61 @@ function render() {
           ${editBtn}
         </div>`;
       item.addEventListener('click', () => abrirDetalhe(l.id));
-      grid.appendChild(item);
-    } else {
-      const card = document.createElement('div');
-      card.className = 'card' + (l.selo ? ' tem-selo' : '');
-      card.style.animationDelay = (i*.05)+'s';
-      const emoji = getEmoji(l);
-      card.innerHTML = `
-        <div class="card-emoji-bar">
-          <span style="font-size:1.5rem;line-height:1">${emoji}</span>
-          <span class="tag">${l.category}</span>
-        </div>
-        <div class="cb2">
-          <h2 class="cn">${l.name}</h2>
-          ${l.selo && SELOS[l.selo] ? `<div class="selo-inline">${SELOS[l.selo]}</div>` : ''}
-          ${l.sells ? `<p class="cs">${l.sells}</p>` : ''}
-          <p class="ca">${pin()} ${l.address}</p>
-          ${l.addedBy ? `<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>` : ''}
-          ${(l.hours_week||l.hours_sat) ? `<div class="card-hours">
-            ${l.hours_week?`<span>🕐 Seg–Sex: ${l.hours_week}</span>`:''}
-            ${l.hours_sat?`<span>🕐 Sáb: ${l.hours_sat}</span>`:''}
-          </div>`:''}
-          ${qualsBadges ? `<div class="quals-wrap">${qualsBadges}</div>` : ''}
-          <div class="cf">
-            <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
-            ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">${waSvg} ${l.phone}</a>` : ''}
-            ${editBtn}
-          </div>
-        </div>`;
-      grid.appendChild(card);
+      return item;
+    };
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)';
+    if (destaques.length) {
+      const hdr = document.createElement('div');
+      hdr.className = 'list-section-header';
+      hdr.innerHTML = '✦ Indicações da Mãe de Santo';
+      wrapper.appendChild(hdr);
+      destaques.forEach((l, i) => wrapper.appendChild(makeListItem(l, i)));
     }
+    if (destaques.length && resto.length) {
+      const sep = document.createElement('div');
+      sep.className = 'list-section-divider';
+      wrapper.appendChild(sep);
+    }
+    resto.forEach((l, i) => wrapper.appendChild(makeListItem(l, destaques.length + i)));
+    grid.appendChild(wrapper);
+    return;
+  }
+
+  // ── CARD MODE ──
+  lista.forEach((l, i) => {
+    const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
+    const waLink = waNum ? `https://wa.me/55${waNum}` : '';
+    const seloFaixa = l.selo && SELOS[l.selo] ? `<div class="selo-faixa">${SELOS[l.selo]}</div>` : '';
+    const qualsBadges = l.quals&&l.quals.length ? l.quals.map(q=>`<span class="qual-badge">${q}</span>`).join('') : '';
+    const editBtn = `<button class="eb" onclick="abrirEditar(${l.id})" title="Editar"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+    const card = document.createElement('div');
+    card.className = 'card' + (l.selo ? ' tem-selo' : '');
+    card.style.animationDelay = (i*.05)+'s';
+    const emoji = getEmoji(l);
+    card.innerHTML = `
+      <div class="card-emoji-bar">
+        <span style="font-size:1.5rem;line-height:1">${emoji}</span>
+        <span class="tag">${l.category}</span>
+      </div>
+      <div class="cb2">
+        <h2 class="cn">${l.name}</h2>
+        ${l.selo && SELOS[l.selo] ? `<div class="selo-inline">${SELOS[l.selo]}</div>` : ''}
+        ${l.sells ? `<p class="cs">${l.sells}</p>` : ''}
+        <p class="ca">${pin()} ${l.address}</p>
+        ${l.addedBy ? `<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>` : ''}
+        ${(l.hours_week||l.hours_sat) ? `<div class="card-hours">
+          ${l.hours_week?`<span>🕐 Seg–Sex: ${l.hours_week}</span>`:''}
+          ${l.hours_sat?`<span>🕐 Sáb: ${l.hours_sat}</span>`:''}
+        </div>`:''}
+        ${qualsBadges ? `<div class="quals-wrap">${qualsBadges}</div>` : ''}
+        <div class="cf">
+          <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
+          ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">${waSvg} ${l.phone}</a>` : ''}
+          ${editBtn}
+        </div>
+      </div>`;
+    grid.appendChild(card);
   });
 }
 
