@@ -252,6 +252,9 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
       <p id="subtitle">Referências e endereços da comunidade</p>
     </div>
     <div class="hr">
+      <button class="hbtn" onclick="abrirMenuSite()" title="Menu do site">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
       <div class="sw">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="search" placeholder="Buscar…" />
@@ -374,8 +377,13 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
       </div>
       <div class="f">
         <label>Link do Google Maps</label>
-        <input type="url" id="s-maps" placeholder="https://share.google/… ou maps.google.com/…" />
-        <span class="fh">Cole qualquer link do Google Maps — será usado no botão "Ver no mapa"</span>
+        <div style="display:flex;gap:8px">
+          <input type="url" id="s-maps" placeholder="https://share.google/… ou maps.google.com/…" oninput="extrairDoMaps(this.value,'s')" style="flex:1" />
+          <button type="button" class="bs" onclick="colarDaAreaDeTransferencia('s')" title="Colar da área de transferência" style="white-space:nowrap;flex-shrink:0">📋 Colar</button>
+        </div>
+        <span class="fh">Cole o link da empresa no Google Maps — além de virar o botão "Ver no mapa", ajuda a loja aparecer no lugar certo do mapa</span>
+        <input type="hidden" id="s-lat" />
+        <input type="hidden" id="s-lng" />
       </div>
       <div class="f">
         <label>O que vende</label>
@@ -392,6 +400,25 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
       <div class="ma">
         <button class="bs" onclick="fechar('ov-sub')">Cancelar</button>
         <button class="bp" id="btn-sub" onclick="submeterLoja()">Enviar indicação 🌸</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: CONFIRMAR LOCALIZAÇÃO (antes de enviar a indicação) ════ -->
+<div class="ov" id="ov-confirma-local">
+  <div class="mo" style="max-width:380px">
+    <div class="mh">
+      <h2>📍 Confirma a localização?</h2>
+      <button class="mc" onclick="fecharConfirmaLocal(false)">×</button>
+    </div>
+    <div class="mb2">
+      <p id="cl-texto" style="font-size:.88rem;color:var(--muted,#666);margin-bottom:10px;line-height:1.5"></p>
+      <p id="cl-outros" style="font-size:.82rem;color:var(--accent);background:var(--light);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></p>
+      <div id="cl-mapa" style="width:100%;height:200px;border-radius:10px;margin-bottom:14px;display:none"></div>
+      <div class="ma">
+        <button class="bs" id="cl-btn-voltar" onclick="fecharConfirmaLocal(false)"></button>
+        <button class="bp" id="cl-btn-confirmar" onclick="fecharConfirmaLocal(true)"></button>
       </div>
     </div>
   </div>
@@ -416,6 +443,22 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
   </div>
 </div>
 
+<!-- ════ MODAL: MENU DO SITE (login + navegação pro resto do terreiro) ════ -->
+<div class="ov" id="ov-menu-site">
+  <div class="mo" style="max-width:400px">
+    <div class="mh">
+      <h2>Bolhas de Luz</h2>
+      <button class="mc" onclick="fechar('ov-menu-site')">×</button>
+    </div>
+    <div class="mb2">
+      <button class="bs" id="ms-btn-buscas" onclick="mostrarDetalheBuscas()" style="text-align:left;font-size:.83rem">🔎 Carregando uso da busca automática…</button>
+      <div id="ms-login-status" style="display:flex;align-items:center;gap:10px;background:#fafafa;border:1.5px solid #eee;border-radius:12px;padding:10px 12px"></div>
+      <button class="bp" onclick="voltarComHandoff()">🏠 Voltar pro site</button>
+      <div id="ms-secoes" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ════ MODAL: EDITAR LOJA (admin) ════ -->
 <div class="ov" id="ov-edit">
   <div class="mo">
@@ -436,7 +479,10 @@ header p{color:rgba(255,255,255,.6);font-size:.7rem;margin-top:1px}
       <div class="f"><label>O que vende</label><textarea id="e-sells"></textarea></div>
       <div class="f">
         <label>Link do Google Maps</label>
-        <input type="url" id="e-maps" oninput="extrairDoMaps(this.value,'e')" />
+        <div style="display:flex;gap:8px">
+          <input type="url" id="e-maps" oninput="extrairDoMaps(this.value,'e')" style="flex:1" />
+          <button type="button" class="bs" onclick="colarDaAreaDeTransferencia('e')" title="Colar da área de transferência" style="white-space:nowrap;flex-shrink:0">📋 Colar</button>
+        </div>
         <span class="fh">Cole o link — endereço e coordenadas extraídos automaticamente</span>
       </div>
       <div class="f"><label>Endereço</label><input type="text" id="e-address" /></div>
@@ -582,6 +628,25 @@ const TERREIRO = {
   lat: -30.022979992882995,
   lng: -51.13118660674672,
 };
+
+// Todas as lojas do guia são perto do terreiro, em Porto Alegre — sem essa
+// informação, o geocode (Nominatim/OpenStreetMap) às vezes não acha o
+// número exato da casa e cai em qualquer ponto de uma rua de nome parecido
+// em outra cidade/estado (foi o que aconteceu com "Av Protasio Alves 6125"
+// sem cidade no texto — caiu longe do endereço real). Isso aqui só reforça
+// o contexto da busca, não garante acerto perfeito do número da casa.
+function enderecoParaGeocode(addr) {
+  return /porto alegre/i.test(addr) ? addr : `${addr}, Porto Alegre, RS, Brasil`;
+}
+// viewbox bem largo cobrindo a grande Porto Alegre, só pra favorecer
+// resultados próximos quando o endereço for ambíguo — sem "bounded=1", um
+// endereço de verdade fora dessa área ainda é encontrado, só não é
+// priorizado por engano
+const GEOCODE_VIEWBOX = '-51.35,-29.90,-50.95,-30.27';
+function urlGeocode(addr) {
+  const query = enderecoParaGeocode(addr);
+  return `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&viewbox=${GEOCODE_VIEWBOX}&q=${encodeURIComponent(query)}`;
+}
 
 const SELOS = {
   'indicacao': '✨ Indicação da Mãe de Santo',
@@ -787,7 +852,7 @@ function getCheckedQuals(containerId) {
 // ══ SUBMISSÃO PÚBLICA ══
 function abrirSubmissao() {
   preencherSelectCats('s-category');
-  ['name','addedBy','sells','address','maps','phone','hours_week','hours_sat'].forEach(f => document.getElementById('s-'+f).value='');
+  ['name','addedBy','sells','address','maps','phone','hours_week','hours_sat','lat','lng'].forEach(f => document.getElementById('s-'+f).value='');
   // auto-fill emoji from first category
   const firstCat = cats[0];
   if (firstCat) document.getElementById('s-emoji').value = firstCat.emoji;
@@ -799,7 +864,59 @@ async function submeterLoja() {
   const g = id => document.getElementById('s-'+id).value.trim();
   const body = { name:g('name'), category:g('category'), sells:g('sells'), address:g('address'), maps:g('maps'), emoji:g('emoji')||'🏪', addedBy:g('addedBy')||'Anônimo', phone:g('phone'), quals:getCheckedQuals('s-quals'), hours_week:g('hours_week'), hours_sat:g('hours_sat') };
   if (!body.name||!body.category||!body.address||!body.addedBy) { alert('Preencha nome, categoria, endereço e quem está indicando.'); return; }
+
   const btn = document.getElementById('btn-sub');
+  const textoOriginalBtn = btn.textContent;
+
+  // já tem coordenada (colou um link do Maps)? usa ela. Senão, procura
+  // sozinho pelo nome + endereço que a pessoa já digitou — ninguém
+  // precisa ir atrás do link na mão (ver /api/buscar-lugar)
+  let lat = parseFloat(document.getElementById('s-lat').value) || null;
+  let lng = parseFloat(document.getElementById('s-lng').value) || null;
+  let nomeEncontrado = null, enderecoEncontrado = null, buscaLimitada = false;
+  // só telefone/horário que a pessoa deixou em branco — fica guardado aqui
+  // e só é aplicado de fato (no formulário e no envio) se ela confirmar que
+  // achamos o lugar certo, pra não vincular dado de um lugar errado
+  let outrosEncontrados = {};
+
+  if (!lat || !lng) {
+    btn.textContent = 'Procurando no mapa…'; btn.disabled = true;
+    try {
+      const resp = await fetch(API + '/buscar-lugar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: body.name, endereco: body.address }),
+      });
+      const dados = await resp.json();
+      if (dados.limitado) {
+        buscaLimitada = true;
+      } else if (dados.encontrado) {
+        lat = dados.lat; lng = dados.lng;
+        nomeEncontrado = dados.nome; enderecoEncontrado = dados.endereco;
+        if (dados.mapsUrl && !body.maps) outrosEncontrados.maps = dados.mapsUrl;
+        if (dados.telefone && !body.phone) outrosEncontrados.phone = dados.telefone;
+        if (dados.horarioSegSex && !body.hours_week) outrosEncontrados.hours_week = dados.horarioSegSex;
+        if (dados.horarioSabado && !body.hours_sat) outrosEncontrados.hours_sat = dados.horarioSabado;
+      }
+    } catch (e) {}
+    btn.textContent = textoOriginalBtn; btn.disabled = false;
+  }
+
+  // antes de enviar de verdade, confirma com quem está indicando se achamos
+  // o lugar certo (evita repetir o problema de loja aparecendo longe do
+  // lugar real no mapa) — e, se achamos telefone/horário também, avisa que
+  // vamos preencher isso junto
+  const confirmou = await confirmarLocalizacaoSubmissao(body.address, lat, lng, nomeEncontrado, enderecoEncontrado, buscaLimitada, outrosEncontrados);
+  if (!confirmou) return;
+  if (lat && lng) { body.lat = lat; body.lng = lng; }
+  // só agora aplica de fato — depois que a pessoa confirmou que o lugar
+  // encontrado está certo
+  Object.entries(outrosEncontrados).forEach(([campo, valor]) => {
+    body[campo] = valor;
+    const el = document.getElementById('s-' + campo);
+    if (el) el.value = valor;
+  });
+
   btn.textContent = 'Enviando…'; btn.disabled = true;
   try {
     const nova = await apiFetch('/lojas', { method:'POST', body:JSON.stringify(body) });
@@ -810,6 +927,61 @@ async function submeterLoja() {
     toast('🌸 Loja adicionada com sucesso! Obrigada pela indicação.');
   } catch { toast('❌ Erro ao enviar. Tente novamente.'); }
   btn.textContent = 'Enviar indicação 🌸'; btn.disabled = false;
+}
+
+// ── CONFIRMAR LOCALIZAÇÃO antes de enviar a indicação pública ──
+// Mostra um popup com a prévia do pino no mapa quando a busca automática
+// (ou um link de Maps colado) deu coordenadas; se não achou nada, avisa
+// que sem isso a loja pode cair no lugar errado do mapa (ver geocode
+// automático em abrirNoMapa), mas ainda deixa enviar assim mesmo.
+let _clResolvePromise = null;
+let _clMapaInstancia = null;
+function confirmarLocalizacaoSubmissao(address, lat, lng, nomeEncontrado, enderecoEncontrado, buscaLimitada, outrosEncontrados) {
+  return new Promise(resolve => {
+    _clResolvePromise = resolve;
+    const temCoords = !!(lat && lng);
+    if (temCoords && nomeEncontrado) {
+      document.getElementById('cl-texto').textContent = `Achamos "${nomeEncontrado}"${enderecoEncontrado ? ' — ' + enderecoEncontrado : ''}. É esse o lugar?`;
+    } else if (temCoords) {
+      document.getElementById('cl-texto').textContent = `Pelo link do Google Maps que você colou, a loja fica aqui. Confere se é o lugar certo:`;
+    } else if (buscaLimitada) {
+      document.getElementById('cl-texto').textContent = `A busca automática atingiu o limite grátis desse mês — volta a funcionar em breve. Por enquanto, quer colar o link do Google Maps da empresa, ou enviar assim mesmo com só o endereço (${address})?`;
+    } else {
+      document.getElementById('cl-texto').textContent = `Não conseguimos localizar esse endereço sozinhos — sem isso, a loja pode ficar imprecisa no mapa. Quer colar o link do Google Maps da empresa, ou enviar assim mesmo com só o endereço (${address})?`;
+    }
+
+    const outrosEl = document.getElementById('cl-outros');
+    const rotulos = { phone: 'telefone', hours_week: 'horário seg-sex', hours_sat: 'horário sábado' };
+    const itens = Object.entries(outrosEncontrados || {}).filter(([campo]) => campo !== 'maps').map(([campo, valor]) => `${rotulos[campo] || campo}: ${valor}`);
+    if (temCoords && itens.length) {
+      outrosEl.textContent = `📋 Também achamos ${itens.join(' · ')} — vamos preencher isso no formulário também (confere se bateu certo).`;
+      outrosEl.style.display = 'block';
+    } else {
+      outrosEl.style.display = 'none';
+    }
+
+    document.getElementById('cl-btn-voltar').textContent = temCoords ? '✎ Não é esse — corrigir' : '✎ Colar o link do Maps';
+    document.getElementById('cl-btn-confirmar').textContent = temCoords ? '✓ Confirmar e enviar' : 'Enviar assim mesmo';
+    const mapaEl = document.getElementById('cl-mapa');
+    if (temCoords) {
+      mapaEl.style.display = 'block';
+      abrir('ov-confirma-local');
+      setTimeout(() => {
+        if (_clMapaInstancia) { _clMapaInstancia.remove(); _clMapaInstancia = null; }
+        _clMapaInstancia = L.map('cl-mapa', { zoomControl: false, attributionControl: false }).setView([lat, lng], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_clMapaInstancia);
+        L.marker([lat, lng]).addTo(_clMapaInstancia);
+      }, 60);
+    } else {
+      mapaEl.style.display = 'none';
+      abrir('ov-confirma-local');
+    }
+  });
+}
+function fecharConfirmaLocal(confirmou) {
+  fechar('ov-confirma-local');
+  if (_clMapaInstancia) { _clMapaInstancia.remove(); _clMapaInstancia = null; }
+  if (_clResolvePromise) { _clResolvePromise(confirmou); _clResolvePromise = null; }
 }
 
 // ══ EDITAR LOJA (admin) ══
@@ -986,6 +1158,40 @@ function ehUrlCurta(url) {
   return SHORT_URL_PATTERNS.some(p => p.test(url));
 }
 
+function pareceLinkDoMaps(url) {
+  if (!url) return false;
+  return ehUrlCurta(url) || /google\.[a-z.]+\/maps|maps\.google\./i.test(url);
+}
+
+// Lê o que está copiado na área de transferência do celular/computador e,
+// se parecer um link do Google Maps, confirma com quem está preenchendo
+// antes de usar — evita ter que digitar/colar manualmente no campo toda
+// vez que já se tem o link copiado (ex: saiu do app do Google Maps depois
+// de tocar em "Compartilhar").
+async function colarDaAreaDeTransferencia(pfx) {
+  if (!navigator.clipboard || !navigator.clipboard.readText) {
+    alert('Esse navegador não deixa ler a área de transferência automaticamente — cola o link manualmente no campo.');
+    return;
+  }
+  let texto;
+  try {
+    texto = (await navigator.clipboard.readText()).trim();
+  } catch (e) {
+    alert('Não consegui ler a área de transferência (pode ter faltado permissão) — cola o link manualmente no campo.');
+    return;
+  }
+  if (!texto) { alert('A área de transferência está vazia.'); return; }
+
+  const resumo = texto.length > 90 ? texto.slice(0, 90) + '…' : texto;
+  if (pareceLinkDoMaps(texto)) {
+    if (!confirm(`Encontramos esse link copiado:\n\n${resumo}\n\nÉ o link da loja no Google Maps?`)) return;
+  } else {
+    if (!confirm(`O que está copiado não parece um link do Google Maps:\n\n${resumo}\n\nUsar assim mesmo?`)) return;
+  }
+  document.getElementById(pfx + '-maps').value = texto;
+  extrairDoMaps(texto, pfx);
+}
+
 async function extrairDoMaps(url, pfx) {
   if (!url || url.length < 10) return;
 
@@ -1044,7 +1250,7 @@ async function geocodificar(pfx) {
   const st = document.getElementById('gs-'+pfx);
   st.className='gs load'; st.textContent='🔍 Buscando coordenadas…';
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr)}`, { headers:{'Accept-Language':'pt-BR'} });
+    const res = await fetch(urlGeocode(addr), { headers:{'Accept-Language':'pt-BR'} });
     const data = await res.json();
     if (!data.length) throw new Error();
     document.getElementById(pfx+'-lat').value = parseFloat(data[0].lat).toFixed(6);
@@ -1156,7 +1362,7 @@ async function abrirNoMapa(id) {
   if (!l.address) { toast('Esta loja não tem endereço cadastrado.'); return; }
   toast('📍 Localizando no mapa…');
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(l.address)}`, { headers:{'Accept-Language':'pt-BR'} });
+    const res = await fetch(urlGeocode(l.address), { headers:{'Accept-Language':'pt-BR'} });
     const data = await res.json();
     if (!data.length) { toast('❌ Endereço não encontrado. Admin pode adicionar as coordenadas.'); return; }
     l.lat = parseFloat(data[0].lat);
@@ -1339,9 +1545,167 @@ function render() {
   });
 }
 
+// ══ MENU DO SITE (login + navegação pro resto do terreiro) ══
+// Esse guia é hospedado à parte (origem diferente de bolhasdeluz.ong.br),
+// então não tem acesso direto à sessão/menu do site principal — o login
+// chega via handoff (ver capturarHandoffToken no <script type="module">
+// logo abaixo) e o menu é buscado ao vivo da API do site principal
+// (CORS já libera "*" em /api/menu), sem precisar duplicar a lógica de
+// visibilidade por grupo de lá — mostra só os itens com link direto
+// (externos/membros); os internos (que dependem do roteamento interno
+// do site principal) viram simplesmente "voltar pro site".
+const SITE_PRINCIPAL = 'https://bolhasdeluz.ong.br';
+let _menuSiteCarregado = false;
+
+function abrirMenuSite() {
+  atualizarLoginStatusUI();
+  if (!_menuSiteCarregado) carregarMenuSite();
+  carregarStatusBuscas();
+  abrir('ov-menu-site');
+}
+
+// ── USO DA BUSCA AUTOMÁTICA (Google Places) ──
+// Mostra quantas buscas já foram feitas esse mês. Como a cota gratuita do
+// Google muda com o tempo, não sabemos o teto de antemão — o backend
+// descobre sozinho na primeira vez que o Google recusar por cota (ver
+// /api/buscar-lugar em functions/api/[[route]].js) e a partir daí mostra
+// esse teto aqui também.
+let _statusBuscas = null;
+async function carregarStatusBuscas() {
+  const btn = document.getElementById('ms-btn-buscas');
+  try {
+    const res = await fetch(API + '/buscar-lugar-status');
+    _statusBuscas = await res.json();
+  } catch (e) {
+    btn.textContent = '🔎 Não consegui carregar o uso da busca automática';
+    return;
+  }
+  if (_statusBuscas.limiteDescoberto !== null) {
+    btn.textContent = `🔎 ${_statusBuscas.contagem} buscas — limite grátis do mês atingido`;
+  } else {
+    btn.textContent = `🔎 ${_statusBuscas.contagem} buscas automáticas este mês`;
+  }
+}
+function mostrarDetalheBuscas() {
+  if (!_statusBuscas) return;
+  if (_statusBuscas.limiteDescoberto !== null) {
+    const data = _statusBuscas.descobertoEm ? new Date(_statusBuscas.descobertoEm).toLocaleDateString('pt-BR') : '';
+    alert(`Esse mês, o Google parou de aceitar busca automática gratuita depois de ${_statusBuscas.limiteDescoberto} buscas (descobrimos isso no dia ${data}).\n\nAté o limite liberar nos bastidores do Google (geralmente no começo do mês seguinte), quem for indicar uma loja precisa colar o link do Google Maps manualmente — o site já avisa isso na hora.`);
+  } else {
+    alert(`${_statusBuscas.contagem} buscas automáticas feitas esse mês até agora.\n\nAinda não sabemos qual é o limite gratuito exato — o site vai descobrir sozinho (e avisar aqui) na primeira vez que o Google recusar por cota.`);
+  }
+}
+
+function atualizarLoginStatusUI() {
+  const el = document.getElementById('ms-login-status');
+  const user = window._usuarioLogado;
+  if (user) {
+    el.innerHTML = `
+      ${user.photoURL ? `<img src="${user.photoURL}" style="width:36px;height:36px;border-radius:50%">` : '<div style="width:36px;height:36px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center">👤</div>'}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.85rem;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${user.displayName || user.email || 'Logada'}</div>
+        <div style="font-size:.72rem;color:var(--muted)">Login puxado do site principal</div>
+      </div>`;
+  } else {
+    el.innerHTML = `<div style="font-size:.83rem;color:var(--muted)">Você não está logada — volta pro site principal pra entrar com Google.</div>`;
+  }
+}
+
+async function carregarMenuSite() {
+  const el = document.getElementById('ms-secoes');
+  el.innerHTML = '<p style="font-size:.83rem;color:var(--muted)">Carregando menu…</p>';
+  try {
+    const res = await fetch(SITE_PRINCIPAL + '/api/menu');
+    const data = await res.json();
+    const secoes = (data && data.sections) || [];
+    el.innerHTML = secoes.map(sec => {
+      const itensComLink = sec.items.filter(i => i.showMenu !== false && !i.adminOnly && i.url);
+      if (!itensComLink.length) return '';
+      return `<div>
+        <div style="font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">${sec.label}</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          ${itensComLink.map(i => `<a href="${i.url}" target="_blank" rel="noopener" style="padding:8px 4px;color:var(--text);font-size:.86rem;border-bottom:1px solid #f5e0e5;text-decoration:none">${i.label}</a>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+    _menuSiteCarregado = true;
+  } catch (e) {
+    el.innerHTML = '<p style="font-size:.83rem;color:var(--muted)">Não consegui carregar o menu agora.</p>';
+  }
+}
+
+async function voltarComHandoff() {
+  try {
+    const idToken = window._getFreshIdToken && await window._getFreshIdToken();
+    if (!idToken) { window.location.href = SITE_PRINCIPAL; return; }
+    const res = await fetch(SITE_PRINCIPAL + '/api/mint-handoff-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    if (!res.ok) throw new Error('mint-handoff-token respondeu ' + res.status);
+    const { customToken } = await res.json();
+    if (!customToken) throw new Error('resposta OK mas sem customToken');
+    window.location.href = SITE_PRINCIPAL + '/#ct=' + encodeURIComponent(customToken) + '&pagina=inicio';
+  } catch (e) {
+    console.error('Handoff de volta pro site falhou:', e);
+    window.location.href = SITE_PRINCIPAL;
+  }
+}
+
 // ══ INIT ══
 carregarTudo();
 document.getElementById('search').addEventListener('input',()=>{ render(); if(currentView==='map') renderMapMarkers(); });
+</script>
+
+<!-- FIREBASE — só pra receber o handoff de login vindo do site principal,
+não cria nenhuma tela de login própria aqui -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithCustomToken, signOut, getIdToken }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDZ_vFMHZ7t7nyJWJPRfD280VZzagqY5Ws",
+  authDomain: "terreiro-bolhas-de-luz.firebaseapp.com",
+  projectId: "terreiro-bolhas-de-luz",
+  storageBucket: "terreiro-bolhas-de-luz.firebasestorage.app",
+  messagingSenderId: "179602931861",
+  appId: "1:179602931861:web:5cf336e9077334cee05b9c",
+  measurementId: "G-6Z1WED2GB1"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+window._getFreshIdToken = async () => {
+  if (!auth.currentUser) return null;
+  try { return await getIdToken(auth.currentUser); } catch { return null; }
+};
+
+// registrado ANTES de qualquer sign-in, pra garantir que o handoff logo
+// abaixo (ou qualquer outro login) sempre dispare esse callback
+onAuthStateChanged(auth, (user) => {
+  window._usuarioLogado = user;
+  if (document.getElementById('ov-menu-site').classList.contains('open')) {
+    window.atualizarLoginStatusUI && window.atualizarLoginStatusUI();
+  }
+});
+
+// captura o #ct=<token> que o site principal anexa ao abrir esse guia
+// (ver abrirComHandoff em index.html) e loga automaticamente
+(function capturarHandoffToken() {
+  try {
+    const hash = window.location.hash || '';
+    const params = new URLSearchParams(hash.replace(/^#/, ''));
+    const token = params.get('ct');
+    if (token) {
+      params.delete('ct');
+      const resto = params.toString();
+      history.replaceState(null, '', window.location.pathname + window.location.search + (resto ? '#' + resto : ''));
+      signInWithCustomToken(auth, token).catch(e => console.error('Handoff de login (Guia de Lojas) falhou:', e));
+    }
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>

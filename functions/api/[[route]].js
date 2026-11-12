@@ -129,6 +129,127 @@ export async function onRequest({ request, env, params }) {
     return json(defaults);
   }
 
+  // ── contador de uso do Google Places, por mês ──────────────────────
+  // A gente não sabe de antemão qual é a cota gratuita exata (o preço/cota
+  // do Google muda com o tempo e depende do plano) — em vez de inventar um
+  // número, só conta cada tentativa e descobre o teto sozinho na primeira
+  // vez que o Google recusar por cota. Depois de descoberto, pausa a busca
+  // automática pro resto do mês (sem gastar chamada à toa) até o contador
+  // zerar no mês seguinte.
+  function chaveMesAtual() {
+    return 'places-busca:' + new Date().toISOString().slice(0, 7); // "2026-11"
+  }
+  async function getContadorBuscas(env) {
+    const raw = await env.LOJAS_KV.get(chaveMesAtual());
+    return raw ? JSON.parse(raw) : { contagem: 0, limiteDescoberto: null, descobertoEm: null };
+  }
+  async function salvarContadorBuscas(env, estado) {
+    await env.LOJAS_KV.put(chaveMesAtual(), JSON.stringify(estado));
+  }
+  function pareceErroDeCota(status, data) {
+    if (status === 429) return true;
+    const s = (data?.error?.status || '').toUpperCase();
+    const msg = (data?.error?.message || '').toLowerCase();
+    return s === 'RESOURCE_EXHAUSTED' || msg.includes('quota');
+  }
+
+  // ── GET /api/buscar-lugar-status ───────
+  // Só lê o contador do mês — pra mostrar no botão do cabeçalho, sem gastar
+  // nenhuma chamada ao Google.
+  if (path === '/buscar-lugar-status' && request.method === 'GET') {
+    return json(await getContadorBuscas(env));
+  }
+
+  // ── POST /api/buscar-lugar ─────────────
+  // Busca automática no Google Places (Text Search) a partir do nome +
+  // endereço já digitados no formulário de indicar loja — pra achar a
+  // localização exata sem precisar que a pessoa vá no Google Maps, copie
+  // o link e cole de volta aqui. Precisa da env var GOOGLE_PLACES_API_KEY
+  // (chave do Google Cloud com a "Places API (New)" ativada e faturamento
+  // configurado — tem cota gratuita mensal, mas exige cartão cadastrado).
+  if (path === '/buscar-lugar' && request.method === 'POST') {
+    const apiKey = env.GOOGLE_PLACES_API_KEY;
+    if (!apiKey) {
+      return json({ error: 'Busca automática não configurada ainda (falta a chave do Google Places nas variáveis de ambiente).' }, 500);
+    }
+    const body = await request.json();
+    const nome = String(body.nome || '').trim();
+    const endereco = String(body.endereco || '').trim();
+    if (!nome && !endereco) return json({ error: 'Informe nome ou endereço.' }, 400);
+
+    const contador = await getContadorBuscas(env);
+    if (contador.limiteDescoberto !== null && contador.contagem >= contador.limiteDescoberto) {
+      // já sabemos o teto desse mês — nem tenta de novo, economiza a chamada
+      return json({ limitado: true, contagem: contador.contagem, limiteDescoberto: contador.limiteDescoberto, descobertoEm: contador.descobertoEm });
+    }
+
+    const textQuery = [nome, endereco].filter(Boolean).join(', ');
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.googleMapsUri,places.nationalPhoneNumber,places.regularOpeningHours.weekdayDescriptions',
+        },
+        body: JSON.stringify({
+          textQuery,
+          languageCode: 'pt-BR',
+          regionCode: 'BR',
+          // só prioriza resultados perto da terreira (Porto Alegre) — não
+          // restringe a busca, então um endereço de verdade fora dali
+          // ainda é encontrado
+          locationBias: {
+            circle: {
+              center: { latitude: -30.022979992882995, longitude: -51.13118660674672 },
+              radius: 30000,
+            },
+          },
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (pareceErroDeCota(res.status, data)) {
+          // primeira vez que o Google recusa por cota esse mês — é o teto
+          // que a gente estava tentando descobrir
+          contador.limiteDescoberto = contador.contagem;
+          contador.descobertoEm = Date.now();
+          await salvarContadorBuscas(env, contador);
+          return json({ limitado: true, contagem: contador.contagem, limiteDescoberto: contador.limiteDescoberto, descobertoEm: contador.descobertoEm });
+        }
+        return json({ error: data.error?.message || 'Erro ao consultar o Google Places.' }, 502);
+      }
+
+      contador.contagem += 1;
+      await salvarContadorBuscas(env, contador);
+
+      const lugar = (data.places || [])[0];
+      if (!lugar) return json({ encontrado: false, contagem: contador.contagem });
+      // "horário seg a sex" e "horário sábado" só dá pra aproximar — o
+      // formulário tem só esses dois campos de texto, não um por dia da
+      // semana, então usamos o texto de segunda (índice 0) e sábado
+      // (índice 5) como representativos e avisamos no popup que é uma
+      // aproximação, pra quem está cadastrando conferir antes de enviar.
+      const diasSemana = lugar.regularOpeningHours?.weekdayDescriptions || [];
+      const horaDoDia = (texto) => texto ? texto.replace(/^[^:]+:\s*/, '') : '';
+      return json({
+        encontrado: true,
+        nome: lugar.displayName?.text || '',
+        endereco: lugar.formattedAddress || '',
+        lat: lugar.location?.latitude ?? null,
+        lng: lugar.location?.longitude ?? null,
+        mapsUrl: lugar.googleMapsUri || '',
+        telefone: lugar.nationalPhoneNumber || '',
+        horarioSegSex: horaDoDia(diasSemana[0]),
+        horarioSabado: horaDoDia(diasSemana[5]),
+        contagem: contador.contagem,
+      });
+    } catch (e) {
+      return json({ error: e.message }, 500);
+    }
+  }
+
   // ── GET /api/resolve-url?u=... ────────
   // Resolve short Google Maps URLs (share.google, goo.gl, maps.app.goo.gl)
   // server-side to extract the final URL with coords and address
