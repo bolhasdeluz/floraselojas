@@ -791,6 +791,7 @@ function abrirDetalhe(id) {
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="mb" onclick="fechar('ov-detalhe');abrirNoMapa(${l.id})" style="flex:1">${pin('#fff')} Ver no mapa</button>
       ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">${waSvg} ${l.phone}</a>` : ''}
+      <button class="eb" onclick="fechar('ov-detalhe');abrirEditar(${l.id})" title="Editar"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
     </div>`;
   abrir('ov-detalhe');
 }
@@ -1539,16 +1540,14 @@ function render() {
     return;
   }
 
-  // ── CARD MODE ──
+  // ── CARD MODE ── mostra só nome, categoria, selo e endereço de cara —
+  // o resto (o que vende, horário, qualidades, indicado por, botões de
+  // mapa/whatsapp/editar) fica no modal de detalhe, aberto ao clicar
   lista.forEach((l, i) => {
-    const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
-    const waLink = waNum ? `https://wa.me/55${waNum}` : '';
-    const seloFaixa = l.selo && SELOS[l.selo] ? `<div class="selo-faixa">${SELOS[l.selo]}</div>` : '';
-    const qualsBadges = l.quals&&l.quals.length ? l.quals.map(q=>`<span class="qual-badge">${q}</span>`).join('') : '';
-    const editBtn = `<button class="eb" onclick="abrirEditar(${l.id})" title="Editar"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
     const card = document.createElement('div');
     card.className = 'card' + (l.selo ? ' tem-selo' : '');
     card.style.animationDelay = (i*.05)+'s';
+    card.style.cursor = 'pointer';
     const emoji = getEmoji(l);
     card.innerHTML = `
       <div class="card-emoji-bar">
@@ -1558,20 +1557,9 @@ function render() {
       <div class="cb2">
         <h2 class="cn">${l.name}</h2>
         ${l.selo && SELOS[l.selo] ? `<div class="selo-inline">${SELOS[l.selo]}</div>` : ''}
-        ${l.sells ? `<p class="cs">${l.sells}</p>` : ''}
         <p class="ca">${pin()} ${l.address}</p>
-        ${l.addedBy ? `<p class="added-by">Indicado por ${l.addedBy}${l.addedAt?' · '+l.addedAt:''}</p>` : ''}
-        ${(l.hours_week||l.hours_sat) ? `<div class="card-hours">
-          ${l.hours_week?`<span>🕐 Seg–Sex: ${l.hours_week}</span>`:''}
-          ${l.hours_sat?`<span>🕐 Sáb: ${l.hours_sat}</span>`:''}
-        </div>`:''}
-        ${qualsBadges ? `<div class="quals-wrap">${qualsBadges}</div>` : ''}
-        <div class="cf">
-          <button class="mb" onclick="abrirNoMapa(${l.id})">${pin('#fff')} Ver no mapa</button>
-          ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">${waSvg} ${l.phone}</a>` : ''}
-          ${editBtn}
-        </div>
       </div>`;
+    card.addEventListener('click', () => abrirDetalhe(l.id));
     grid.appendChild(card);
   });
 }
