@@ -1552,10 +1552,12 @@ function render() {
     return;
   }
 
-  // ── CARD MODE ── mostra só nome, categoria, selo e endereço de cara —
-  // o resto (o que vende, horário, qualidades, indicado por, botões de
-  // mapa/whatsapp/editar) fica no modal de detalhe, aberto ao clicar
+  // ── CARD MODE ── mostra nome, categoria, selo, endereço e WhatsApp de
+  // cara — o resto (o que vende, horário, qualidades, indicado por, botões
+  // de mapa/editar) fica no modal de detalhe, aberto ao clicar
   lista.forEach((l, i) => {
+    const waNum = l.phone ? l.phone.replace(/\D/g,'') : '';
+    const waLink = waNum ? `https://wa.me/55${waNum}` : '';
     const card = document.createElement('div');
     card.className = 'card' + (l.selo ? ' tem-selo' : '');
     card.style.animationDelay = (i*.05)+'s';
@@ -1570,6 +1572,7 @@ function render() {
         <h2 class="cn">${l.name}</h2>
         ${l.selo && SELOS[l.selo] ? `<div class="selo-inline">${SELOS[l.selo]}</div>` : ''}
         <p class="ca">${pin()} ${l.address}</p>
+        ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${waSvg} ${l.phone}</a>` : ''}
       </div>`;
     card.addEventListener('click', () => abrirDetalhe(l.id));
     grid.appendChild(card);
