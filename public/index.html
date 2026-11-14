@@ -1317,7 +1317,19 @@ function filtrados() {
     const cOk = activeCategory==='Todas' || l.category===activeCategory;
     const qOk = !q || (l.name||'').toLowerCase().includes(q) || (l.sells||'').toLowerCase().includes(q) || (l.category||'').toLowerCase().includes(q);
     return cOk && qOk;
+  }).sort((a, b) => {
+    const ordem = ordemCategoria(a.category) - ordemCategoria(b.category);
+    return ordem !== 0 ? ordem : (a.name||'').localeCompare(b.name||'', 'pt-BR');
   });
+}
+
+// ordem das categorias na listagem = a mesma ordem cadastrada em
+// /api/categorias (a mesma usada no dropdown de filtro), não alfabética —
+// categoria que não bate com nenhuma cadastrada (não devia acontecer) vai
+// pro final, pra não sumir da lista
+function ordemCategoria(nome) {
+  const idx = cats.findIndex(c => c.name === nome);
+  return idx === -1 ? cats.length : idx;
 }
 
 function criarIconeTerreiro() {
